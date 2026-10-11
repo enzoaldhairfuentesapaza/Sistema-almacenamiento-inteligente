@@ -1,0 +1,14 @@
+**/.venv
+**/node_modules
+**/.env
+**/.env.*
+**/__pycache__
+**/*.db
+**/dist
+.git
+upload
+backups
+
+.demo*
+**/*.sqlite3
+backend/var
