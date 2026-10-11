@@ -1,5 +1,17 @@
 # Historial de cambios
 
+## v0.2.2 · 10/10/2026
+
+- Menú Análisis → Administración → Operaciones; Vista general/Estadísticas primero y controles de tamaño/sonido fijos dentro de la barra.
+- Texto base 16 px, formularios más legibles, acentos por módulo y colores de acción.
+- Nuevo/editar producto en página con ficha en vivo; vista desde nombre/ojito, imagen, atributos, QR y stock autorizado.
+- Filtros combinados de catálogo por precio, tipo, categoría, marca, estado, orden, existencias/almacén y atributo tipado.
+- Borrado con permiso propio, confirmación SKU y protección de variantes, stock e historial.
+- Estadísticas locales en nueve secciones y vista global con todos los módulos autorizados; período local y distribución/evolución.
+- Alertas con tonos distintos y silencio persistente por navegador.
+- 25 pruebas de API aprobadas y flujos de escritorio/móvil comprobados; manual y documento maestro actualizados.
+- Sin cambios de esquema. IA y pronósticos quedan para la siguiente etapa.
+
 ## v0.2.1 · 10/10/2026
 
 - Empresa ficticia Demo Repuestos y generador aislado: 80 productos, 40 clientes, 10 proveedores, 2 sedes, 3 almacenes y 6 cuentas.

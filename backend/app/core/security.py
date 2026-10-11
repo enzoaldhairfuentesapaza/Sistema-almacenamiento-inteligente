@@ -20,6 +20,7 @@ PERMISSIONS = {
     "sedes.editar": "Gestionar sedes y almacenes",
     "productos.ver": "Consultar catálogo",
     "productos.editar": "Gestionar catálogo y tipos",
+    "productos.eliminar": "Eliminar productos sin stock, variantes ni historial",
     "costos.ver": "Consultar costos y márgenes",
     "inventario.ver": "Consultar existencias y Kardex",
     "inventario.mover": "Registrar entradas y salidas",

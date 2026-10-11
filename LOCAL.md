@@ -14,6 +14,10 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 
 `setup.ps1` instala dependencias, ejecuta `alembic upgrade head` y compila React. Detiene el proceso si un paso falla. La migración 0.1 permanece y las nuevas tablas se añaden sin borrar empresa, sedes o almacenes existentes.
 
+## Cambios al actualizar a v0.2.2
+
+No hay nuevas tablas en esta versión. Conserva los datos de la demo y el PostgreSQL habitual; copia también `frontend/dist` para ver la interfaz nueva si no compilas. El propietario tiene acceso al borrado protegido; para otros usuarios añade `productos.eliminar` al rol correspondiente. La actualización no sobrescribe permisos personalizados. Recarga la página después de reiniciar el servidor.
+
 ## Primera instalación
 
 Necesitas Python 3.12 o superior, Node.js 24 o una versión compatible con el Vite instalado, npm, Git y PostgreSQL. La entrega se verificó con Python 3.12 y Node 24. En tu equipo se venía utilizando Python 3.14; instala las dependencias en su entorno y revisa el resultado del instalador.

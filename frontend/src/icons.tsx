@@ -1,5 +1,11 @@
 import type { CSSProperties } from "react";
 const paths: Record<string, string> = {
+  trash: "M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7",
+  edit: "m4 16 12-12 4 4-12 12-5 1z M13 7l4 4",
+  volume: "M11 4 6 8H3v8h3l5 4z M15 8a6 6 0 0 1 0 8 M18 5a10 10 0 0 1 0 14",
+  mute: "M11 4 6 8H3v8h3l5 4z M16 9l6 6 M16 15l6-6",
+  filter: "M3 4h18l-7 8v8l-4-2v-6z",
+  plus: "M12 4v16 M4 12h16",
   home: "M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z M9 21v-8h6v8",
   box: "M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 5 9-5 M12 12v9 M7.5 5l9 5",
   inventory: "M4 3h16v18H4z M4 9h16 M4 15h16 M8 6h8 M8 12h8 M8 18h8",

@@ -1,3 +1,5 @@
+import { ModuleStatistics } from "../Statistics";
+import { Icon } from "../icons";
 import { useEffect, useState } from "react";
 import { api, can, notify, problem, str } from "../api";
 import type { Row, User } from "../api";
@@ -56,6 +58,7 @@ export default function Organization({
   return (
     <>
       <Title
+        icon="building"
         title="Empresa y ubicaciones"
         subtitle="Una instalación, una empresa y tantas sedes como necesites."
       />
@@ -78,121 +81,143 @@ export default function Organization({
               {t === "sedes" ? "Sedes" : "Almacenes"}
             </button>
           ))}
-      </div>
-      {tab === "empresa" ? (
-        <section className="panel narrow">
-          <h2>Configuración de empresa</h2>
-          <form
-            onSubmit={(e) =>
-              submit(e, async () => {
-                await api("/empresa", {
-                  method: "PUT",
-                  body: JSON.stringify({
-                    ...company,
-                    ruc: company.ruc || null,
-                  }),
-                });
-                notify("Empresa guardada");
-                refreshCompany();
-              })
-            }
+        {can(user, "reportes.ver") && can(user, "sedes.ver") && (
+          <button
+            className={tab === "estadisticas" ? "active" : ""}
+            onClick={() => setTab("estadisticas")}
           >
-            <div className="form-grid">
-              {[
-                { k: "razon_social", l: "Razón social" },
-                { k: "nombre_comercial", l: "Nombre comercial" },
-                { k: "ruc", l: "RUC (opcional)" },
-                { k: "moneda", l: "Moneda ISO (ej. PEN, USD)" },
-                { k: "zona_horaria", l: "Zona horaria (ej. America/Lima)" },
-              ].map((f) => (
-                <Field key={f.k} label={f.l}>
-                  <input
-                    required={f.k !== "ruc"}
-                    disabled={!can(user, "empresa.editar")}
-                    value={company[f.k]}
-                    onChange={(e) =>
-                      setCompany((c) => ({ ...c, [f.k]: e.target.value }))
-                    }
-                  />
-                </Field>
-              ))}
+            <Icon name="chart" size={18} />
+            Estadísticas
+          </button>
+        )}
+      </div>
+      {tab === "estadisticas" && <ModuleStatistics module={"organizacion"} />}
+      <div hidden={tab === "estadisticas"}>
+        {tab === "empresa" ? (
+          <section className="panel narrow">
+            <h2>Configuración de empresa</h2>
+            <form
+              onSubmit={(e) =>
+                submit(e, async () => {
+                  await api("/empresa", {
+                    method: "PUT",
+                    body: JSON.stringify({
+                      ...company,
+                      ruc: company.ruc || null,
+                    }),
+                  });
+                  notify("Empresa guardada");
+                  refreshCompany();
+                })
+              }
+            >
+              <div className="form-grid">
+                {[
+                  { k: "razon_social", l: "Razón social" },
+                  { k: "nombre_comercial", l: "Nombre comercial" },
+                  { k: "ruc", l: "RUC (opcional)" },
+                  { k: "moneda", l: "Moneda ISO (ej. PEN, USD)" },
+                  { k: "zona_horaria", l: "Zona horaria (ej. America/Lima)" },
+                ].map((f) => (
+                  <Field key={f.k} label={f.l}>
+                    <input
+                      required={f.k !== "ruc"}
+                      disabled={!can(user, "empresa.editar")}
+                      value={company[f.k]}
+                      onChange={(e) =>
+                        setCompany((c) => ({ ...c, [f.k]: e.target.value }))
+                      }
+                    />
+                  </Field>
+                ))}
+              </div>
+              {can(user, "empresa.editar") && <Save busy={busy} />}
+            </form>
+          </section>
+        ) : (
+          <section className="panel">
+            <div className="section-heading">
+              <h2>{tab === "sedes" ? "Sedes" : "Almacenes"}</h2>
+              {can(user, "sedes.editar") &&
+                (tab !== "sedes" || user.propietario) && (
+                  <button
+                    className="action-create"
+                    onClick={() => setEdit(null)}
+                  >
+                    + Crear
+                  </button>
+                )}
             </div>
-            {can(user, "empresa.editar") && <Save busy={busy} />}
-          </form>
-        </section>
-      ) : (
-        <section className="panel">
-          <div className="section-heading">
-            <h2>{tab === "sedes" ? "Sedes" : "Almacenes"}</h2>
-            {can(user, "sedes.editar") &&
-              (tab !== "sedes" || user.propietario) && (
-                <button className="primary" onClick={() => setEdit(null)}>
-                  + Crear
-                </button>
-              )}
-          </div>
-          <DataTable
-            rows={tab === "sedes" ? sites.rows : stores.rows}
-            columns={[
-              {
-                title: "ID / Código",
-                cell: (r) => (
-                  <>
-                    {r.id}
-                    <small>{str(r, "codigo")}</small>
-                  </>
-                ),
-              },
-              { title: "Nombre", cell: (r) => str(r, "nombre") },
-              {
-                title: tab === "sedes" ? "Dirección" : "Sede",
-                cell: (r) =>
-                  tab === "sedes"
-                    ? str(r, "direccion")
-                    : str(
-                        sites.rows.find((s) => s.id === Number(r.sede_id)) || {
-                          id: 0,
-                        },
-                        "nombre",
-                      ),
-              },
-              {
-                title: "Estado",
-                cell: (r) => (
-                  <Badge good={Boolean(r.activo)}>
-                    {r.activo ? "Activo" : "Inactivo"}
-                  </Badge>
-                ),
-              },
-              {
-                title: "Acciones",
-                cell: (r) =>
-                  can(user, "sedes.editar") && (
-                    <div className="row-actions">
-                      <button onClick={() => setEdit(r)}>Editar</button>
-                      <button onClick={() => status(r)}>
-                        {r.activo ? "Desactivar" : "Activar"}
-                      </button>
-                    </div>
+            <DataTable
+              rows={tab === "sedes" ? sites.rows : stores.rows}
+              columns={[
+                {
+                  title: "ID / Código",
+                  cell: (r) => (
+                    <>
+                      {r.id}
+                      <small>{str(r, "codigo")}</small>
+                    </>
                   ),
-              },
-            ]}
+                },
+                { title: "Nombre", cell: (r) => str(r, "nombre") },
+                {
+                  title: tab === "sedes" ? "Dirección" : "Sede",
+                  cell: (r) =>
+                    tab === "sedes"
+                      ? str(r, "direccion")
+                      : str(
+                          sites.rows.find(
+                            (s) => s.id === Number(r.sede_id),
+                          ) || {
+                            id: 0,
+                          },
+                          "nombre",
+                        ),
+                },
+                {
+                  title: "Estado",
+                  cell: (r) => (
+                    <Badge good={Boolean(r.activo)}>
+                      {r.activo ? "Activo" : "Inactivo"}
+                    </Badge>
+                  ),
+                },
+                {
+                  title: "Acciones",
+                  cell: (r) =>
+                    can(user, "sedes.editar") && (
+                      <div className="row-actions">
+                        <button
+                          className="action-edit"
+                          onClick={() => setEdit(r)}
+                        >
+                          Editar
+                        </button>
+                        <button onClick={() => status(r)}>
+                          {r.activo ? "Desactivar" : "Activar"}
+                        </button>
+                      </div>
+                    ),
+                },
+              ]}
+            />
+          </section>
+        )}
+        {edit !== undefined && (
+          <LocationForm
+            row={edit}
+            kind={tab}
+            sites={sites.rows}
+            close={() => setEdit(undefined)}
+            saved={() => {
+              setEdit(undefined);
+              sites.reload();
+              stores.reload();
+            }}
           />
-        </section>
-      )}
-      {edit !== undefined && (
-        <LocationForm
-          row={edit}
-          kind={tab}
-          sites={sites.rows}
-          close={() => setEdit(undefined)}
-          saved={() => {
-            setEdit(undefined);
-            sites.reload();
-            stores.reload();
-          }}
-        />
-      )}
+        )}
+      </div>
     </>
   );
 }

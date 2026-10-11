@@ -1,4 +1,4 @@
-# Arquitectura · v0.2.1
+# Arquitectura · v0.2.2
 
 ## Decisiones
 
@@ -54,7 +54,7 @@ Costos se excluyen desde la API/Excel. Catálogo/contactos son globales de la em
 
 ## Inteligencia
 
-LLM sin conexión SQL. Herramientas disponibles: buscar productos, consultar existencias y resumen, según permisos. Argumentos validados, pasos/resultados limitados. El proveedor recibe pregunta y resultados autorizados. Descripciones son datos, no instrucciones. No hay escritura ni RAG en v0.2.1.
+LLM sin conexión SQL. Herramientas disponibles: buscar productos, consultar existencias y resumen, según permisos. Argumentos validados, pasos/resultados limitados. El proveedor recibe pregunta y resultados autorizados. Descripciones son datos, no instrucciones. No hay escritura ni RAG en v0.2.2.
 
 Pronóstico compara base semanal con Ridge (tendencia, día de semana, ciclo anual). Dos cortes cronológicos de siete días entrenan solo con fechas anteriores. Selección por MAE; WAPE si hay denominador y banda del percentil 90 del error absoluto. Banda sin cobertura garantizada. Requiere 56 días completos, excluye hoy parcial, rellena ausencia con cero y no estima demanda perdida.
 
@@ -75,3 +75,17 @@ Errores: 401 sesión, 403 permiso/sede/CSRF, 404 inexistente, 409 conflicto, 422
 `productos.imagen` guarda un nombre aleatorio; `UPLOADS_DIR` conserva el WebP normalizado fuera de las fuentes. Lectura protegida por `productos.ver`, subida/quitar por `productos.editar` y CSRF. Solo raster JPG/PNG/WebP; tamaños limitados, reducción a 1200 px y metadata eliminada. El nombre original no determina una ruta. Los assets SVG propios (logo, ilustraciones y miniaturas genéricas) son estáticos de React.
 
 El generador `app/services/demo.py` inserta organización, cuentas, catálogo y seis meses de eventos ficticios en una transacción. Rechaza cualquier base con datos. `scripts/demo.ps1` cambia variables solo durante el proceso, apunta a SQLite aislada, aplica Alembic y pide contraseña mediante `getpass`. `DEMO_MODE` devuelve una marca de entorno en la sesión para mostrar el aviso de datos ficticios. Las pruebas comprueban saldos en orden de fecha, documentos, pagos, permisos y ML. El motor sigue siendo configurable; el comando también admite PostgreSQL dedicado `demo_repuestos_db`.
+
+## Interfaz y reportes de la versión 0.2.2
+
+Las rutas hash `productos/nuevo`, `productos/{id}` y `productos/{id}/editar` separan lista, ficha y formulario. `ProductEditor` controla datos/imagen temporal y `ProductCard` presenta la vista previa sin guardar automáticamente. Las imágenes temporales liberan sus URL al cambiar/desmontar; la subida mantiene el flujo de dos solicitudes. `useList` cancela y descarta respuestas de filtros anteriores.
+
+`GET /productos` conserva la respuesta de lista y amplía filtros combinables de precio, marca, stock y atributo tipado. El campo debe pertenecer al tipo elegido. El filtro de almacén requiere lectura de inventario y alcance autorizado; el precio es precio de venta, no costo.
+
+`DELETE /productos/{id}` exige `productos.eliminar`, sesión y CSRF. Bloquea el producto, comprueba variantes hijas, existencias y líneas/historial antes de eliminar; registra auditoría y limpia su imagen después de confirmar. Si hay relación devuelve 409 y el operador archiva. No se borran movimientos ni documentos.
+
+`services/module_reports.py` centraliza indicadores de nueve módulos y `api/routes/reportes.py` expone `GET /reportes/modulos/{modulo}`. Valida módulo, período y permisos; convierte el período local a límites UTC. Estados actuales y operaciones fechadas se distinguen en la respuesta. Rankings comerciales se expresan en importes; no suman unidades incompatibles. Valoración usa costo actual; Excel consulta únicamente eventos del usuario. Exportar añade auditoría para su conteo desde esta versión.
+
+React usa Web Audio para dos tonos de confirmación/error con volumen bajo, activados después de interacción, y `localStorage` para el interruptor de sonido. No requiere archivos de audio ni conexión externa. Los mensajes visuales no dependen del audio.
+
+Esta versión no añade tablas ni revisiones Alembic. El esquema de imágenes de v0.2.1 se mantiene. No se amplían LLM ni pronósticos.

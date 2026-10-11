@@ -14,7 +14,15 @@ import Access from "./pages/Access";
 import Excel from "./pages/Excel";
 import Intelligence from "./pages/Intelligence";
 import Audit from "./pages/Audit";
+import Statistics from "./Statistics";
+import { setSoundEnabled, soundEnabled, unlockAudio } from "./sounds";
 const navigation = [
+  {
+    id: "estadisticas",
+    label: "Estadísticas",
+    symbol: "chart",
+    permission: "reportes.ver",
+  },
   {
     id: "inicio",
     label: "Vista general",
@@ -90,6 +98,18 @@ function visible(user: User, permission: string) {
 }
 export default function App() {
   const [demo, setDemo] = useState(false);
+  const [sound, setSound] = useState(soundEnabled);
+  useEffect(() => {
+    const unlock = () => {
+      void unlockAudio();
+    };
+    document.addEventListener("pointerdown", unlock);
+    document.addEventListener("keydown", unlock);
+    return () => {
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("keydown", unlock);
+    };
+  }, []);
   const [smallScreen, setSmallScreen] = useState(
     window.matchMedia("(max-width: 850px)").matches,
   );
@@ -190,12 +210,15 @@ export default function App() {
       </>
     );
   const links = navigation.filter((n) => visible(user, n.permission)),
+    rootPage = page.split("/")[0],
     selected =
-      page === "perfil"
+      rootPage === "perfil"
         ? page
-        : links.some((n) => n.id === page)
-          ? page
-          : links[0]?.id || "perfil",
+        : links.some((n) => n.id === rootPage)
+          ? rootPage
+          : links.find((n) => n.id === "inicio")?.id ||
+            links[0]?.id ||
+            "perfil",
     currency = String(company?.moneda || "PEN");
   return (
     <div className={`app ${collapsed ? "menu-collapsed" : ""}`}>
@@ -206,7 +229,7 @@ export default function App() {
         <div className="sidebar-heading">
           <a
             className="brand"
-            href={`#${links[0]?.id || "perfil"}`}
+            href={`#${links.find((n) => n.id === "inicio")?.id || links[0]?.id || "perfil"}`}
             aria-label="Inicio de la empresa"
             onClick={() => setMobile(false)}
           >
@@ -227,8 +250,18 @@ export default function App() {
         <nav aria-label="Navegación principal">
           {[
             {
+              id: "analisis",
+              label: "Análisis",
+              items: ["inicio", "estadisticas", "inteligencia", "excel"],
+            },
+            {
+              id: "administracion",
+              label: "Administración",
+              items: ["organizacion", "accesos", "auditoria"],
+            },
+            {
               id: "operacion",
-              label: "Operación",
+              label: "Operaciones",
               items: [
                 "productos",
                 "inventario",
@@ -237,21 +270,13 @@ export default function App() {
                 "contactos",
               ],
             },
-            {
-              id: "analisis",
-              label: "Análisis",
-              items: ["inicio", "inteligencia", "excel"],
-            },
-            {
-              id: "administracion",
-              label: "Administración",
-              items: ["organizacion", "accesos", "auditoria"],
-            },
           ].map((group) => {
-            const items = links.filter((n) => group.items.includes(n.id));
+            const items = group.items.flatMap((id) =>
+              links.filter((n) => n.id === id),
+            );
             if (!items.length) return null;
             return (
-              <div className="nav-group" key={group.id}>
+              <div className={`nav-group nav-${group.id}`} key={group.id}>
                 <button
                   className="nav-group-toggle"
                   aria-expanded={collapsed || groups[group.id]}
@@ -295,7 +320,7 @@ export default function App() {
                       <span className="nav-label">{n.label}</span>
                       {n.id === "inteligencia" && (
                         <small className="nav-label" aria-hidden="true">
-                          IA
+                          Pendiente
                         </small>
                       )}
                     </a>
@@ -305,11 +330,54 @@ export default function App() {
             );
           })}
         </nav>
+        <div className="sidebar-controls">
+          <button
+            className="sidebar-collapse"
+            onClick={() => {
+              if (smallScreen) {
+                setMobile(false);
+                return;
+              }
+              setCollapsed(!collapsed);
+              localStorage.setItem("menu-collapsed", collapsed ? "no" : "yes");
+            }}
+            aria-label={
+              smallScreen
+                ? "Cerrar menú lateral"
+                : collapsed
+                  ? "Expandir menú"
+                  : "Contraer menú"
+            }
+            title={collapsed ? "Expandir menú" : "Contraer menú"}
+            aria-expanded={smallScreen ? mobile : !collapsed}
+            aria-controls="main-navigation"
+          >
+            <Icon
+              name="chevron"
+              size={20}
+              style={{ transform: collapsed ? undefined : "rotate(180deg)" }}
+            />
+            <span>{smallScreen ? "Cerrar menú" : "Contraer menú"}</span>
+          </button>
+          <button
+            className="sound-toggle"
+            aria-pressed={sound}
+            aria-label={sound ? "Silenciar sonidos" : "Activar sonidos"}
+            title={sound ? "Silenciar sonidos" : "Activar sonidos"}
+            onClick={() => {
+              setSound(!sound);
+              setSoundEnabled(!sound);
+            }}
+          >
+            <Icon name={sound ? "volume" : "mute"} />
+            <span>{sound ? "Sonidos activados" : "Sonidos desactivados"}</span>
+          </button>
+        </div>
         <div className="sidebar-bottom">
           <div className="installation-status">
             <i /> Instalación independiente
           </div>
-          <span>v0.2.1 · TECCompany</span>
+          <span>v0.2.2 · TECCompany</span>
         </div>
       </aside>
       {mobile && (
@@ -331,34 +399,20 @@ export default function App() {
       </a>
       <div className="app-main">
         <header className="topbar">
-          <button
-            className="menu-toggle"
-            onClick={() => {
-              if (smallScreen) {
+          {smallScreen && (
+            <button
+              className="menu-toggle"
+              onClick={() => {
                 setCollapsed(false);
                 setMobile(!mobile);
-              } else {
-                setCollapsed(!collapsed);
-                localStorage.setItem(
-                  "menu-collapsed",
-                  collapsed ? "no" : "yes",
-                );
-              }
-            }}
-            aria-label={
-              smallScreen
-                ? mobile
-                  ? "Cerrar menú principal"
-                  : "Abrir menú"
-                : collapsed
-                  ? "Expandir menú"
-                  : "Contraer menú"
-            }
-            aria-expanded={smallScreen ? mobile : !collapsed}
-            aria-controls="main-navigation"
-          >
-            <Icon name="menu" />
-          </button>
+              }}
+              aria-label={mobile ? "Cerrar menú principal" : "Abrir menú"}
+              aria-expanded={mobile}
+              aria-controls="main-navigation"
+            >
+              <Icon name="menu" />
+            </button>
+          )}
           <div className="company-name">
             <span className="status-dot" />
             <strong>{String(company?.nombre_comercial || "Mi empresa")}</strong>
@@ -383,6 +437,7 @@ export default function App() {
           id="main-content"
           tabIndex={-1}
           className="content"
+          data-module={selected}
           key={selected}
         >
           {demo && (
@@ -398,7 +453,10 @@ export default function App() {
             <Dashboard user={user} currency={currency} />
           )}
           {selected === "productos" && (
-            <Catalog user={user} currency={currency} />
+            <Catalog user={user} currency={currency} path={page} />
+          )}
+          {selected === "estadisticas" && (
+            <Statistics user={user} path={page} />
           )}
           {selected === "inventario" && <Inventory user={user} />}
           {selected === "ventas" && (
@@ -518,7 +576,7 @@ function Login({ logged }: { logged: (s: SessionData) => void }) {
             instalación.
           </p>
         </div>
-        <small>Sistema de Almacenamiento Inteligente · v0.2.1</small>
+        <small>Sistema de Almacenamiento Inteligente · v0.2.2</small>
       </section>
     </div>
   );

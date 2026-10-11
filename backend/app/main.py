@@ -8,7 +8,7 @@ from app.core.config import BACKEND_DIR
 
 app = FastAPI(
     title="Sistema de Almacenamiento Inteligente",
-    version="0.2.1",
+    version="0.2.2",
     description="Instalación independiente para inventario y gestión empresarial",
 )
 

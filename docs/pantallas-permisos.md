@@ -1,4 +1,4 @@
-# Pantallas y permisos · v0.2.1
+# Pantallas y permisos · v0.2.2
 
 API como autoridad. Menús/botones se adaptan; llamadas directas reciben la misma validación. Los roles suman permisos; no hay herencia ni denegaciones explícitas. Propietario tiene alcance completo y acciones reservadas.
 
@@ -8,7 +8,8 @@ API como autoridad. Menús/botones se adaptan; llamadas directas reciben la mism
 | --- | --- | --- |
 | Acceso/perfil | Sesión propia | Login/logout/cambio de contraseña |
 | Vista general | `reportes.ver` | Valoración: `costos.ver` |
-| Productos | `productos.ver` | Crear/editar/archivar/tipos/categorías: `productos.editar`; costos: `costos.ver`; QR con lectura |
+| Estadísticas global/local | `reportes.ver` + lectura de cada módulo | Compras/valoración: `costos.ver`; usuarios/auditoría: propietario; Excel: permiso de importar/exportar y solo eventos propios |
+| Productos | `productos.ver` | Crear/editar/archivar/tipos/categorías: `productos.editar`; costos: `costos.ver`; QR/ficha con lectura; borrar sin historial: `productos.eliminar` |
 | Inventario/Kardex | `inventario.ver` | Entrada/salida: `inventario.mover`; ajuste/transferencia además `inventario.ajustar` |
 | Ventas/cobros | `ventas.ver` | Crear: `ventas.crear`; cobrar: `pagos.registrar`; anular: `ventas.anular` |
 | Compras | `compras.ver` + `costos.ver` | Recibir: `compras.crear` + `costos.ver` |
@@ -46,3 +47,11 @@ Cero sedes implica cero alcance operativo. Catálogo/contactos se consultan con 
 ## Estados y confirmaciones
 
 Formularios con validación, espera y botón bloqueado al guardar. Archivo solicita confirmación; anulación exige motivo. Diálogos con etiquetas, foco nativo y Escape. Tablas con vacío/carga/error y paginación. Stock nunca se introduce desde producto.
+
+## Navegación y estadísticas de la versión 0.2.2
+
+Análisis aparece primero (Vista general y Estadísticas al inicio), luego Administración y finalmente Operaciones. El control de tamaño y sonido está dentro de la barra y no se desplaza con las opciones. Cada sección tiene un icono/acento y las subsecciones una selección visible.
+
+Los productos se crean/editan en página con ficha en vivo. Ver ficha usa lectura; editar usa gestión; borrar tiene permiso independiente y exige SKU. El backend impide borrar registros vinculados, aunque el botón esté disponible. El propietario tiene el permiso nuevo automáticamente. Los roles existentes conservan sus asignaciones; el propietario puede añadir `productos.eliminar` desde Usuarios y roles. Roles Administrador creados después de esta versión lo incluyen; Almacenero no lo recibe por editar catálogo.
+
+`/reportes/modulos/{modulo}` valida `reportes.ver` y lectura: productos, inventario, ventas, compras+costos, contactos, sedes para organización, propietario para accesos/auditoría y permiso Excel para su resumen propio. Operaciones/ubicaciones se limitan a sedes del usuario. La página global solo reúne módulos autorizados.

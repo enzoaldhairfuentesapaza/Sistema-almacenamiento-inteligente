@@ -1,4 +1,4 @@
-# Verificación de la entrega v0.2.1
+# Verificación de la entrega v0.2.2
 
 Fecha: 10/10/2026. Se verificó el código del paquete en este entorno, sin acceder a la base ni al equipo Windows del usuario. No se modificó GitHub ni se realizó publicación externa.
 
@@ -6,7 +6,7 @@ Fecha: 10/10/2026. Se verificó el código del paquete en este entorno, sin acce
 
 | Comprobación | Resultado | Alcance |
 | --- | --- | --- |
-| API `pytest -q` | 21 pruebas aprobadas | SQLite temporal; reglas de negocio y seguridad |
+| API `pytest -q` | 25 pruebas aprobadas | SQLite temporal; reglas de negocio y seguridad |
 | Ruff | Sin errores | Backend, tests y scripts; imports locales de scripts exceptuados |
 | Alembic | Upgrade y check correctos | Base SQLite temporal; datos iniciales de empresa/sedes/almacenes preservados |
 | SQL PostgreSQL | Compilación offline correcta | Migraciones aditivas; no ejecutadas contra PostgreSQL real |
@@ -14,10 +14,10 @@ Fecha: 10/10/2026. Se verificó el código del paquete en este entorno, sin acce
 | `npm run lint` | Correcto | ESLint |
 | `npm run format:check` | Correcto | Prettier |
 | `npm run build` | Correcto | TypeScript y Vite, build incluido |
-| Navegador escritorio | Correcto | Login → producto/imagen → entrada → venta → cobro → proveedor → recepción → pronóstico y menú desplegable |
+| Navegador escritorio | Correcto | Nuevo/editar con ficha en vivo/imagen/atributos → filtros combinados → vista → borrar/archivar protegido → nueve reportes → controles de menú/sonido |
 | Navegación de módulos | Correcta | Pantallas principales sin errores de JavaScript |
-| Móvil 390 × 844 | Correcto | Abrir menú, elegir pantalla, ocultar menú y sin desbordamiento global |
-| Documento maestro | Renderizado y revisado | DOCX v0.2.1 con alcance, diseño y demo documentados |
+| Móvil 390 × 844 | Correcto | Menú/controles internos, crear sin modal, ficha previa y sin desbordamiento global |
+| Documento maestro | Renderizado y revisado | DOCX v0.2.2 con alcance, diseño y demo documentados |
 
 ## Casos de API
 
@@ -60,3 +60,16 @@ El QR identifica por SKU, el PDF no es fiscal, Yape/Plin son registro manual y M
 - Agrupación diaria respeta timestamps con zona horaria.
 
 El script PowerShell se revisó, pero no se ejecutó en Windows. Se ejecutaron su migración, generador y servidor equivalente en Linux. La cantidad de eventos ficticios depende de la fecha local al generar; el 10/10/2026 se obtuvieron 1.174 ventas, 92 compras, 1.029 pagos y 3.370 movimientos antes de las operaciones del navegador.
+
+## Pruebas nuevas de la versión 0.2.2
+
+- Filtros combinados de precio, marca, tipo/categoría, estado, orden y atributos numéricos/booleanos/selección; rangos inválidos, valores no finitos y campos desconocidos devuelven 422.
+- Stock y reportes limitados por sede; rechazo de almacén externo, costos ausentes sin permiso y estadísticas de administración reservadas.
+- Período de reportes con límites UTC según día de Lima, máximo 366 días y validación de módulo; nueve respuestas de propietario.
+- Borrado real de producto sin uso y limpieza de imagen; rechazo de producto con variante/stock/historial y permiso independiente.
+- Navegador: creación/edición en página, ficha que actualiza nombre/precio/imagen/atributos, confirmación de cambios sin guardar, filtro compuesto, consulta, papelera con SKU, rechazo 409 y archivo.
+- Nueve pestañas locales y resumen global sin errores JavaScript; menú ordenado, botón dentro de la barra y visible tras desplazar sus opciones.
+- Preferencia de sonido persistente y silencio efectivo; generación de tonos de confirmación comprobada mediante Web Audio. Audición/volumen físicos quedan sujetos al navegador/equipo.
+- Vista móvil 390 × 844 sin desbordamiento general, ficha debajo del formulario y cierre del menú desde su control interno.
+
+No se amplían ni se validan proveedores reales de IA/ML en este cambio. Las comprobaciones del motor PostgreSQL, instalador Windows y despliegue siguen sujetas a aceptación en el equipo real.

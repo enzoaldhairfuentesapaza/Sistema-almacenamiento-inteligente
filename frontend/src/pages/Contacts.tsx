@@ -1,3 +1,5 @@
+import { ModuleStatistics } from "../Statistics";
+import { Icon } from "../icons";
 import { useState } from "react";
 import { api, can, notify, str } from "../api";
 import type { Row, User } from "../api";
@@ -23,11 +25,12 @@ export default function Contacts({ user }: { user: User }) {
   return (
     <>
       <Title
+        icon="contacts"
         title="Clientes y proveedores"
         subtitle="Datos de contacto para conectar tus operaciones."
       >
-        {can(user, "contactos.editar") && (
-          <button className="primary" onClick={() => setEdit(null)}>
+        {type !== "estadisticas" && can(user, "contactos.editar") && (
+          <button className="action-create" onClick={() => setEdit(null)}>
             + Nuevo contacto
           </button>
         )}
@@ -45,69 +48,83 @@ export default function Contacts({ user }: { user: User }) {
             {t === "cliente" ? "Clientes" : "Proveedores"}
           </button>
         ))}
+        {can(user, "reportes.ver") && (
+          <button
+            className={type === "estadisticas" ? "active" : ""}
+            onClick={() => setType("estadisticas")}
+          >
+            <Icon name="chart" size={18} />
+            Estadísticas
+          </button>
+        )}
       </div>
-      <section className="panel">
-        <div className="toolbar">
-          <input
-            aria-label="Buscar contactos"
-            placeholder="Buscar nombre, documento o correo"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setOffset(0);
+      {type === "estadisticas" && <ModuleStatistics module={"contactos"} />}
+      <div hidden={type === "estadisticas"}>
+        <section className="panel">
+          <div className="toolbar">
+            <input
+              aria-label="Buscar contactos"
+              placeholder="Buscar nombre, documento o correo"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setOffset(0);
+              }}
+            />
+          </div>
+          <ListState {...data} />
+          <DataTable
+            rows={data.rows}
+            columns={[
+              {
+                title: "Nombre",
+                cell: (r) => (
+                  <>
+                    <strong>{str(r, "nombre")}</strong>
+                    <small>{str(r, "documento")}</small>
+                  </>
+                ),
+              },
+              { title: "Teléfono", cell: (r) => str(r, "telefono") },
+              { title: "Correo", cell: (r) => str(r, "email") },
+              {
+                title: "Estado",
+                cell: (r) => (
+                  <Badge good={Boolean(r.activo)}>
+                    {r.activo ? "Activo" : "Inactivo"}
+                  </Badge>
+                ),
+              },
+              {
+                title: "Acciones",
+                cell: (r) =>
+                  can(user, "contactos.editar") && (
+                    <button className="action-edit" onClick={() => setEdit(r)}>
+                      Editar
+                    </button>
+                  ),
+              },
+            ]}
+          />
+          <Paginator
+            offset={offset}
+            size={50}
+            count={data.rows.length}
+            setOffset={setOffset}
+          />
+        </section>
+        {edit !== undefined && (
+          <ContactForm
+            row={edit}
+            type={type}
+            close={() => setEdit(undefined)}
+            saved={() => {
+              setEdit(undefined);
+              data.reload();
             }}
           />
-        </div>
-        <ListState {...data} />
-        <DataTable
-          rows={data.rows}
-          columns={[
-            {
-              title: "Nombre",
-              cell: (r) => (
-                <>
-                  <strong>{str(r, "nombre")}</strong>
-                  <small>{str(r, "documento")}</small>
-                </>
-              ),
-            },
-            { title: "Teléfono", cell: (r) => str(r, "telefono") },
-            { title: "Correo", cell: (r) => str(r, "email") },
-            {
-              title: "Estado",
-              cell: (r) => (
-                <Badge good={Boolean(r.activo)}>
-                  {r.activo ? "Activo" : "Inactivo"}
-                </Badge>
-              ),
-            },
-            {
-              title: "Acciones",
-              cell: (r) =>
-                can(user, "contactos.editar") && (
-                  <button onClick={() => setEdit(r)}>Editar</button>
-                ),
-            },
-          ]}
-        />
-        <Paginator
-          offset={offset}
-          size={50}
-          count={data.rows.length}
-          setOffset={setOffset}
-        />
-      </section>
-      {edit !== undefined && (
-        <ContactForm
-          row={edit}
-          type={type}
-          close={() => setEdit(undefined)}
-          saved={() => {
-            setEdit(undefined);
-            data.reload();
-          }}
-        />
-      )}
+        )}
+      </div>
     </>
   );
 }

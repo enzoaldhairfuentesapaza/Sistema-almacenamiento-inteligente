@@ -1,3 +1,4 @@
+import { playAlert } from "./sounds";
 export type Row = Record<string, unknown> & { id: number };
 export interface User {
   id: number;
@@ -69,6 +70,7 @@ export const money = (value: unknown, currency = "PEN") =>
 export const date = (value: unknown) =>
   new Date(String(value)).toLocaleString("es-PE");
 export function notify(message: string, error = false) {
+  playAlert(error);
   window.dispatchEvent(
     new CustomEvent("notice", { detail: { message, error } }),
   );

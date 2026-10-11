@@ -1,69 +1,129 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api, can, download, money, notify, num, problem, str } from "../api";
 import type { Row, User } from "../api";
+import { Icon } from "../icons";
 import {
   Badge,
   DataTable,
   Field,
-  FilePicker,
-  ProductThumb,
   ListState,
   Modal,
   Paginator,
-  ProductLookup,
-  Save,
+  ProductThumb,
+  SectionTabs,
   Title,
 } from "../ui";
-import { useList, useSubmit } from "../hooks";
-interface Definition {
-  clave: string;
-  etiqueta: string;
-  tipo: string;
-  obligatorio: boolean;
-  opciones: string[];
-}
+import { useList, useResource, useSubmit } from "../hooks";
+import type { Definition } from "../catalog-types";
+import { fieldNames } from "../catalog-types";
+import ProductCard from "../ProductCard";
+import ProductEditor from "./ProductEditor";
+import MetaForm from "./CatalogMeta";
+import { ModuleStatistics } from "../Statistics";
+const emptyFilters = {
+  tipo_id: "",
+  categoria_id: "",
+  marca: "",
+  activo: "",
+  precio_min: "",
+  precio_max: "",
+  campo: "",
+  valor: "",
+  atributo_min: "",
+  atributo_max: "",
+  existencias: "",
+  almacen_id: "",
+  orden: "recientes",
+};
+type Filters = typeof emptyFilters;
 export default function Catalog({
   user,
   currency,
+  path = "productos",
 }: {
   user: User;
   currency: string;
+  path?: string;
 }) {
   const [q, setQ] = useState(""),
     [offset, setOffset] = useState(0),
-    [edit, setEdit] = useState<Row | null | undefined>(undefined),
-    [tab, setTab] = useState("productos");
-  const products = useList(
-      `/productos?limit=50&offset=${offset}&q=${encodeURIComponent(q)}`,
-    ),
-    types = useList("/tipos"),
-    cats = useList("/categorias");
-  const [meta, setMeta] = useState("");
-  const allowed = can(user, "productos.editar");
-  async function status(r: Row) {
+    [tab, setTab] = useState("productos"),
+    [draft, setDraft] = useState<Filters>(emptyFilters),
+    [filters, setFilters] = useState<Filters>(emptyFilters),
+    [meta, setMeta] = useState(""),
+    [remove, setRemove] = useState<Row | null>(null),
+    [metaSearch, setMetaSearch] = useState("");
+  const types = useList("/tipos"),
+    cats = useList("/categorias"),
+    warehouses = useList(
+      can(user, "inventario.ver") ? "/almacenes?limit=1000" : null,
+    );
+  const params = new URLSearchParams({
+    limit: "50",
+    offset: String(offset),
+    q,
+  });
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  const products = useList(`/productos?${params}`),
+    allowed = can(user, "productos.editar");
+  const fields = (types.rows.find((t) => t.id === Number(draft.tipo_id))
+    ?.campos || []) as Definition[];
+  const field = fields.find((f) => f.clave === draft.campo);
+  const change = (key: keyof Filters, value: string) =>
+    setDraft((d) => ({
+      ...d,
+      [key]: value,
+      ...(key === "tipo_id"
+        ? { campo: "", valor: "", atributo_min: "", atributo_max: "" }
+        : {}),
+      ...(key === "campo"
+        ? { valor: "", atributo_min: "", atributo_max: "" }
+        : {}),
+    }));
+  async function status(row: Row) {
     try {
-      await api(`/productos/${r.id}/estado`, {
+      await api(`/productos/${row.id}/estado`, {
         method: "PATCH",
-        body: JSON.stringify({ activo: !r.activo }),
+        body: JSON.stringify({ activo: !row.activo }),
       });
       products.reload();
-      notify("Estado actualizado");
+      notify(row.activo ? "Producto archivado" : "Producto activado");
     } catch (e) {
       problem(e);
     }
   }
+  const navigate = (next: string) => {
+    window.location.hash = next;
+  };
+  if (path !== "productos")
+    return (
+      <ProductPage
+        user={user}
+        currency={currency}
+        path={path}
+        types={types.rows}
+        cats={cats.rows}
+        saved={() => products.reload()}
+        key={path}
+      />
+    );
   return (
     <>
       <Title
         title="Catálogo de productos"
-        subtitle="Artículos, variantes y atributos que se adaptan a tu negocio."
+        subtitle="Encuentra, organiza y presenta cada artículo de tu empresa."
+        icon="box"
       >
-        {allowed && (
+        {allowed && tab !== "estadisticas" && (
           <button
-            className="primary"
-            onClick={() => (tab === "productos" ? setEdit(null) : setMeta(tab))}
+            className="action-create"
+            onClick={() =>
+              tab === "productos" ? navigate("productos/nuevo") : setMeta(tab)
+            }
           >
-            +{" "}
+            <Icon name="plus" />
             {tab === "productos"
               ? "Nuevo producto"
               : tab === "tipos"
@@ -72,34 +132,283 @@ export default function Catalog({
           </button>
         )}
       </Title>
-      <div className="tabs">
-        {["productos", "tipos", "categorias"].map((t) => (
-          <button
-            className={t === tab ? "active" : ""}
-            onClick={() => setTab(t)}
-            key={t}
-          >
-            {t === "categorias"
-              ? "Categorías"
-              : t === "tipos"
-                ? "Tipos y campos"
-                : "Productos"}
-          </button>
-        ))}
-      </div>
-      {tab === "productos" ? (
+      <SectionTabs
+        label="Subsecciones de productos"
+        value={tab}
+        onChange={setTab}
+        items={[
+          {
+            id: "productos",
+            label: "Productos",
+            description: "Artículos, fichas y precios",
+            icon: "box",
+          },
+          {
+            id: "tipos",
+            label: "Tipos y campos",
+            description: "Atributos según el rubro",
+            icon: "file",
+          },
+          {
+            id: "categorias",
+            label: "Categorías",
+            description: "Familias para organizar",
+            icon: "inventory",
+          },
+          ...(can(user, "reportes.ver")
+            ? [
+                {
+                  id: "estadisticas",
+                  label: "Estadísticas",
+                  description: "Indicadores del catálogo",
+                  icon: "chart",
+                },
+              ]
+            : []),
+        ]}
+      />
+      {tab === "estadisticas" ? (
+        <ModuleStatistics module="productos" />
+      ) : tab === "productos" ? (
         <section className="panel">
-          <div className="toolbar">
-            <input
-              placeholder="Buscar por nombre, SKU o marca"
-              aria-label="Buscar catálogo"
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setOffset(0);
-              }}
-            />
-            <span className="muted">50 registros por página</span>
+          <form
+            className="catalog-filters"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setFilters(draft);
+              setOffset(0);
+            }}
+          >
+            <div className="section-heading">
+              <div>
+                <h2>
+                  <Icon name="filter" />
+                  Busca y filtra productos
+                </h2>
+                <p className="muted">
+                  Combina filtros y pulsa Aplicar. La búsqueda por nombre, SKU o
+                  marca se actualiza al escribir.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  setDraft(emptyFilters);
+                  setFilters(emptyFilters);
+                  setOffset(0);
+                }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+            <Field label="Buscar catálogo">
+              <input
+                type="search"
+                placeholder="Nombre, SKU o marca"
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setOffset(0);
+                }}
+              />
+            </Field>
+            <div className="filter-grid">
+              <Field label="Tipo de producto">
+                <select
+                  value={draft.tipo_id}
+                  onChange={(e) => change("tipo_id", e.target.value)}
+                >
+                  <option value="">Todos los tipos</option>
+                  {types.rows.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {str(t, "nombre")}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Categoría">
+                <select
+                  value={draft.categoria_id}
+                  onChange={(e) => change("categoria_id", e.target.value)}
+                >
+                  <option value="">Todas las categorías</option>
+                  {cats.rows.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {str(c, "nombre")}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Marca">
+                <input
+                  value={draft.marca}
+                  maxLength={100}
+                  placeholder="Ej. Torque Demo"
+                  onChange={(e) => change("marca", e.target.value)}
+                />
+              </Field>
+              <Field label="Estado">
+                <select
+                  value={draft.activo}
+                  onChange={(e) => change("activo", e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="true">Activos</option>
+                  <option value="false">Archivados</option>
+                </select>
+              </Field>
+              <Field label={`Precio mínimo (${currency})`}>
+                <input
+                  type="number"
+                  min="0"
+                  step=".01"
+                  max={draft.precio_max || undefined}
+                  value={draft.precio_min}
+                  placeholder="Sin mínimo"
+                  onChange={(e) => change("precio_min", e.target.value)}
+                />
+              </Field>
+              <Field label={`Precio máximo (${currency})`}>
+                <input
+                  type="number"
+                  min={draft.precio_min || "0"}
+                  step=".01"
+                  value={draft.precio_max}
+                  placeholder="Sin máximo"
+                  onChange={(e) => change("precio_max", e.target.value)}
+                />
+              </Field>
+              <Field label="Ordenar por">
+                <select
+                  value={draft.orden}
+                  onChange={(e) => change("orden", e.target.value)}
+                >
+                  <option value="recientes">Más recientes</option>
+                  <option value="nombre">Nombre A–Z</option>
+                  <option value="sku">SKU A–Z</option>
+                  <option value="precio_asc">Precio: menor a mayor</option>
+                  <option value="precio_desc">Precio: mayor a menor</option>
+                </select>
+              </Field>
+              {can(user, "inventario.ver") && (
+                <>
+                  <Field label="Existencias">
+                    <select
+                      value={draft.existencias}
+                      onChange={(e) => change("existencias", e.target.value)}
+                    >
+                      <option value="">Cualquier saldo</option>
+                      <option value="disponible">Con stock disponible</option>
+                      <option value="bajo">Bajo mínimo en algún almacén</option>
+                      <option value="agotado">Sin stock disponible</option>
+                    </select>
+                  </Field>
+                  <Field
+                    label="Almacén del filtro"
+                    hint="Limita el filtro de stock a esta ubicación."
+                  >
+                    <select
+                      value={draft.almacen_id}
+                      onChange={(e) => change("almacen_id", e.target.value)}
+                    >
+                      <option value="">Todos mis almacenes</option>
+                      {warehouses.rows.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {str(w, "nombre")}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </>
+              )}
+            </div>
+            {!!fields.length && (
+              <div className="attribute-filter">
+                <Field label="Campo dinámico">
+                  <select
+                    value={draft.campo}
+                    onChange={(e) => change("campo", e.target.value)}
+                  >
+                    <option value="">Sin filtro de atributo</option>
+                    {fields.map((f) => (
+                      <option key={f.clave} value={f.clave}>
+                        {f.etiqueta} · {fieldNames[f.tipo]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {field &&
+                  (field.tipo === "numero" ? (
+                    <>
+                      <Field label={`${field.etiqueta}: mínimo`}>
+                        <input
+                          type="number"
+                          step="any"
+                          value={draft.atributo_min}
+                          max={draft.atributo_max || undefined}
+                          onChange={(e) =>
+                            change("atributo_min", e.target.value)
+                          }
+                        />
+                      </Field>
+                      <Field label={`${field.etiqueta}: máximo`}>
+                        <input
+                          type="number"
+                          step="any"
+                          min={draft.atributo_min || undefined}
+                          value={draft.atributo_max}
+                          onChange={(e) =>
+                            change("atributo_max", e.target.value)
+                          }
+                        />
+                      </Field>
+                    </>
+                  ) : (
+                    <Field label={`Valor de ${field.etiqueta}`}>
+                      {field.tipo === "seleccion" ||
+                      field.tipo === "booleano" ? (
+                        <select
+                          value={draft.valor}
+                          onChange={(e) => change("valor", e.target.value)}
+                        >
+                          <option value="">Cualquier valor</option>
+                          {field.tipo === "booleano" ? (
+                            <>
+                              <option value="true">Sí</option>
+                              <option value="false">No</option>
+                            </>
+                          ) : (
+                            field.opciones.map((v) => (
+                              <option key={v}>{v}</option>
+                            ))
+                          )}
+                        </select>
+                      ) : (
+                        <input
+                          type={field.tipo === "fecha" ? "date" : "text"}
+                          value={draft.valor}
+                          onChange={(e) => change("valor", e.target.value)}
+                        />
+                      )}
+                    </Field>
+                  ))}
+              </div>
+            )}
+            <div className="filter-footer">
+              <span className="muted">
+                Precios de venta sin impuesto adicional. Los saldos respetan tus
+                sedes.
+              </span>
+              <button className="action-view" type="submit">
+                <Icon name="filter" size={18} />
+                Aplicar filtros
+              </button>
+            </div>
+          </form>
+          <div className="results-heading">
+            <h2>Resultados del catálogo</h2>
+            <span>{products.rows.length} registros en esta página</span>
           </div>
           <ListState {...products} />
           <DataTable
@@ -111,7 +420,9 @@ export default function Catalog({
                   <div className="product-cell">
                     <ProductThumb row={r} />
                     <div>
-                      <strong>{str(r, "nombre")}</strong>
+                      <a className="product-name" href={`#productos/${r.id}`}>
+                        {str(r, "nombre")}
+                      </a>
                       <small>
                         {str(r, "sku")} · {str(r, "marca") || "Sin marca"}
                       </small>
@@ -122,12 +433,10 @@ export default function Catalog({
               {
                 title: "Tipo",
                 cell: (r) =>
-                  str(
-                    types.rows.find((t) => t.id === num(r, "tipo_id")) || {
-                      id: 0,
-                    },
-                    "nombre",
-                  ) || "General",
+                  String(
+                    types.rows.find((t) => t.id === num(r, "tipo_id"))
+                      ?.nombre || "General",
+                  ),
               },
               { title: "Precio", cell: (r) => money(r.precio, currency) },
               ...(can(user, "costos.ver")
@@ -141,7 +450,7 @@ export default function Catalog({
               {
                 title: "Estado",
                 cell: (r) => (
-                  <Badge good={Boolean(r.activo)}>
+                  <Badge good={!!r.activo}>
                     {r.activo ? "Activo" : "Archivado"}
                   </Badge>
                 ),
@@ -150,24 +459,42 @@ export default function Catalog({
                 title: "Acciones",
                 cell: (r) => (
                   <div className="row-actions">
+                    <a
+                      className="button action-view"
+                      href={`#productos/${r.id}`}
+                      aria-label={`Ver producto ${str(r, "nombre")}`}
+                      title="Ver ficha"
+                    >
+                      <Icon name="eye" size={18} />
+                    </a>
                     {allowed && (
                       <>
-                        <button onClick={() => setEdit(r)}>Editar</button>
-                        <button onClick={() => status(r)}>
+                        <a
+                          className="button action-edit"
+                          href={`#productos/${r.id}/editar`}
+                          aria-label={`Editar producto ${str(r, "nombre")}`}
+                        >
+                          <Icon name="edit" size={16} />
+                          Editar
+                        </a>
+                        <button
+                          className="action-warning"
+                          onClick={() => status(r)}
+                        >
                           {r.activo ? "Archivar" : "Activar"}
                         </button>
                       </>
                     )}
-                    <button
-                      onClick={() =>
-                        download(
-                          `/productos/${r.id}/qr`,
-                          `qr-${str(r, "sku")}.png`,
-                        ).catch(problem)
-                      }
-                    >
-                      QR
-                    </button>
+                    {can(user, "productos.eliminar") && (
+                      <button
+                        className="action-danger"
+                        aria-label={`Borrar producto ${str(r, "nombre")}`}
+                        title="Borrar producto sin historial"
+                        onClick={() => setRemove(r)}
+                      >
+                        <Icon name="trash" size={18} />
+                      </button>
+                    )}
                   </div>
                 ),
               },
@@ -182,40 +509,71 @@ export default function Catalog({
         </section>
       ) : (
         <section className="panel">
+          <div className="section-heading">
+            <div>
+              <h2>
+                {tab === "tipos"
+                  ? "Tipos y atributos dinámicos"
+                  : "Familias del catálogo"}
+              </h2>
+              <p>
+                {tab === "tipos"
+                  ? "Cada tipo define los campos que aparecerán en el formulario y en sus filtros."
+                  : "Las categorías agrupan productos; pueden depender de una categoría principal."}
+              </p>
+            </div>
+          </div>
+          <Field
+            label={tab === "tipos" ? "Buscar tipo o campo" : "Buscar categoría"}
+          >
+            <input
+              type="search"
+              value={metaSearch}
+              onChange={(e) => setMetaSearch(e.target.value)}
+              placeholder={
+                tab === "tipos"
+                  ? "Ej. Repuestos, diámetro o compatibilidad"
+                  : "Nombre de categoría"
+              }
+            />
+          </Field>
           <DataTable
-            rows={tab === "tipos" ? types.rows : cats.rows}
+            rows={(tab === "tipos" ? types.rows : cats.rows).filter((r) =>
+              (str(r, "nombre") + " " + JSON.stringify(r.campos || ""))
+                .toLowerCase()
+                .includes(metaSearch.toLowerCase()),
+            )}
             columns={[
-              { title: "Nombre", cell: (r) => str(r, "nombre") },
               {
-                title: tab === "tipos" ? "Campos dinámicos" : "Categoría padre",
+                title: "Nombre",
+                cell: (r) => <strong>{str(r, "nombre")}</strong>,
+              },
+              {
+                title:
+                  tab === "tipos" ? "Campos y formatos" : "Categoría principal",
                 cell: (r) =>
-                  tab === "tipos"
-                    ? (r.campos as Definition[])
-                        .map((f) => f.etiqueta)
-                        .join(", ") || "Sin campos"
-                    : str(
-                        cats.rows.find((c) => c.id === num(r, "padre_id")) || {
-                          id: 0,
-                        },
-                        "nombre",
-                      ) || "Principal",
+                  tab === "tipos" ? (
+                    <div className="field-chips">
+                      {(r.campos as Definition[]).map((f) => (
+                        <span key={f.clave}>
+                          <strong>{f.etiqueta}</strong>
+                          <small>
+                            {fieldNames[f.tipo]}
+                            {f.obligatorio ? " · Obligatorio" : ""}
+                          </small>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    String(
+                      cats.rows.find((c) => c.id === num(r, "padre_id"))
+                        ?.nombre || "Principal",
+                    )
+                  ),
               },
             ]}
           />
         </section>
-      )}
-      {edit !== undefined && (
-        <ProductForm
-          user={user}
-          row={edit}
-          types={types.rows}
-          cats={cats.rows}
-          close={() => setEdit(undefined)}
-          saved={() => {
-            setEdit(undefined);
-            products.reload();
-          }}
-        />
       )}
       {meta && (
         <MetaForm
@@ -229,501 +587,235 @@ export default function Catalog({
           }}
         />
       )}
+      {remove && (
+        <DeleteProduct
+          row={remove}
+          close={() => setRemove(null)}
+          deleted={() => {
+            setRemove(null);
+            products.reload();
+          }}
+        />
+      )}
     </>
   );
 }
-function ProductForm({
-  row,
+function ProductPage({
+  user,
+  currency,
+  path,
   types,
   cats,
-  user,
-  close,
   saved,
 }: {
-  row: Row | null;
+  user: User;
+  currency: string;
+  path: string;
   types: Row[];
   cats: Row[];
-  user: User;
-  close: () => void;
   saved: () => void;
 }) {
-  const [data, setData] = useState<Record<string, unknown>>(
-    row
-      ? { ...row }
-      : {
-          sku: "",
-          nombre: "",
-          descripcion: "",
-          marca: "",
-          unidad: "unidad",
-          precio: "0",
-          costo: "0",
-          stock_minimo: "0",
-          tipo_id: null,
-          categoria_id: null,
-          producto_padre_id: null,
-          atributos: {},
-          activo: true,
-        },
+  const pieces = path.split("/"),
+    isNew = pieces[1] === "nuevo",
+    id = Number(pieces[1]),
+    edit = isNew || pieces[2] === "editar";
+  const valid = isNew || (Number.isInteger(id) && id > 0 && id <= 2147483647);
+  const record = useResource<Row>(!isNew && valid ? `/productos/${id}` : null);
+  const row = record.data;
+  const stock = useList(
+    !isNew && valid && can(user, "inventario.ver")
+      ? `/inventario?producto_id=${id}&limit=1000`
+      : null,
   );
-  const [parentProduct, setParentProduct] = useState<Row | null>(null);
-  useEffect(() => {
-    if (row?.producto_padre_id)
-      api<Row>(`/productos/${row.producto_padre_id}`)
-        .then(setParentProduct)
-        .catch(problem);
-  }, [row]);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [removePhoto, setRemovePhoto] = useState(false);
-  const { busy, submit } = useSubmit();
-  const change = (k: string, v: unknown) => setData((d) => ({ ...d, [k]: v }));
-  const fields = (types.find((t) => t.id === Number(data.tipo_id))?.campos ||
-    []) as Definition[];
-  const attrs = data.atributos as Record<string, unknown>;
+  const parent = useResource<Row>(
+    row?.producto_padre_id ? `/productos/${row.producto_padre_id}` : null,
+  );
+  const close = () => {
+    if (
+      window.dispatchEvent(
+        new Event("request-navigation", { cancelable: true }),
+      )
+    )
+      window.location.hash = "productos";
+  };
+  if (!valid)
+    return (
+      <section className="panel">
+        <p className="error">Producto no encontrado.</p>
+        <button onClick={close}>Volver al catálogo</button>
+      </section>
+    );
+  if (!isNew && !row)
+    return (
+      <section className="panel">
+        <ListState loading={record.loading} error={record.error} />
+        <button onClick={close}>Volver al catálogo</button>
+      </section>
+    );
   return (
-    <Modal title={row ? "Editar producto" : "Nuevo producto"} close={close}>
+    <>
+      <div className="breadcrumbs">
+        <a href="#productos">Productos</a>
+        <Icon name="chevron" size={14} />
+        <span>
+          {isNew ? "Nuevo producto" : edit ? "Editar producto" : "Ver producto"}
+        </span>
+      </div>
+      <Title
+        title={
+          isNew ? "Nuevo producto" : edit ? "Editar producto" : "Ver producto"
+        }
+        subtitle={
+          isNew
+            ? "Completa la información y revisa la ficha en vivo antes de guardar."
+            : str(row!, "nombre")
+        }
+        icon="box"
+      >
+        <button onClick={close}>Volver al catálogo</button>
+        {!edit && can(user, "productos.editar") && (
+          <a className="button action-edit" href={`#productos/${id}/editar`}>
+            <Icon name="edit" size={18} />
+            Editar producto
+          </a>
+        )}
+      </Title>
+      {edit && can(user, "productos.editar") ? (
+        <ProductEditor
+          row={isNew ? null : row}
+          user={user}
+          currency={currency}
+          types={types}
+          cats={cats}
+          close={close}
+          saved={(p) => {
+            saved();
+            window.location.hash = `productos/${p.id}`;
+          }}
+        />
+      ) : row ? (
+        <div className="product-workspace product-view">
+          <ProductCard
+            row={row}
+            types={types}
+            cats={cats}
+            currency={currency}
+            showCost={can(user, "costos.ver")}
+            parentName={parent.data ? str(parent.data, "nombre") : ""}
+          />
+          <section className="panel product-extra">
+            <h2>Información y existencias</h2>
+            <p>
+              Esta ficha refleja los datos guardados. Puedes descargar el QR
+              para identificar el artículo por su SKU.
+            </p>
+            <button
+              className="action-secondary"
+              onClick={() =>
+                download(
+                  `/productos/${id}/qr`,
+                  `qr-${str(row, "sku")}.png`,
+                ).catch(problem)
+              }
+            >
+              Descargar QR
+            </button>
+            {can(user, "inventario.ver") && (
+              <>
+                <h3>Stock por almacén</h3>
+                <ListState {...stock} />
+                <DataTable
+                  rows={stock.rows}
+                  columns={[
+                    { title: "Almacén", cell: (r) => str(r, "almacen") },
+                    { title: "Cantidad", cell: (r) => str(r, "cantidad") },
+                    {
+                      title: "Estado",
+                      cell: (r) => (
+                        <Badge good={!r.alerta}>
+                          {r.alerta ? "Reponer" : "Disponible"}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                />
+                <a className="button action-view" href="#inventario">
+                  Abrir inventario
+                </a>
+              </>
+            )}
+          </section>
+        </div>
+      ) : (
+        <p className="error">No tienes permiso para crear productos.</p>
+      )}
+    </>
+  );
+}
+function DeleteProduct({
+  row,
+  close,
+  deleted,
+}: {
+  row: Row;
+  close: () => void;
+  deleted: () => void;
+}) {
+  const [confirmation, setConfirmation] = useState(""),
+    [error, setError] = useState("");
+  const { busy, submit } = useSubmit();
+  return (
+    <Modal title="Borrar producto" close={close}>
       <form
         onSubmit={(e) =>
           submit(e, async () => {
-            const { id: _id, imagen: _imagen, ...body } = data;
-            void _id;
-            void _imagen;
-            if (!can(user, "costos.ver")) delete body.costo;
-            const record = await api<Row>(
-              row ? `/productos/${row.id}` : "/productos",
-              {
-                method: row ? "PUT" : "POST",
-                body: JSON.stringify(body),
-              },
-            );
-            if (photo || removePhoto) {
-              try {
-                if (photo) {
-                  const form = new FormData();
-                  form.append("file", photo);
-                  await api(`/productos/${record.id}/imagen`, {
-                    method: "POST",
-                    body: form,
-                  });
-                } else
-                  await api(`/productos/${record.id}/imagen`, {
-                    method: "DELETE",
-                  });
-              } catch (e) {
-                notify(
-                  "Producto guardado. No se pudo actualizar la imagen: " +
-                    (e instanceof Error ? e.message : "inténtalo desde Editar"),
-                  true,
-                );
-                saved();
-                return;
-              }
+            try {
+              await api(`/productos/${row.id}`, { method: "DELETE" });
+              notify("Producto borrado");
+              deleted();
+            } catch (err) {
+              const msg =
+                err instanceof Error ? err.message : "No se pudo borrar";
+              setError(msg);
+              notify(msg, true);
             }
-            notify("Producto guardado");
-            saved();
           })
         }
       >
-        <div className="form-guide">
-          Identifica el artículo, organiza su categoría y define sus importes.
-          Las existencias se cargan desde Inventario.
-        </div>
-        <h3 className="form-section">
-          <span>01</span> Identificación y organización
-        </h3>
-        <div className="form-grid">
-          <Field
-            label="SKU"
-            hint="Código único, por ejemplo REP-FIL-001. Sin espacios."
-          >
-            <input
-              required
-              maxLength={80}
-              pattern="[A-Za-z0-9_.\-]+"
-              value={String(data.sku)}
-              onChange={(e) => change("sku", e.target.value)}
-            />
-          </Field>
-          <Field label="Nombre">
-            <input
-              required
-              maxLength={200}
-              value={String(data.nombre)}
-              onChange={(e) => change("nombre", e.target.value)}
-            />
-          </Field>
-          <Field label="Marca">
-            <input
-              value={String(data.marca)}
-              onChange={(e) => change("marca", e.target.value)}
-            />
-          </Field>
-          <Field label="Unidad" hint="Ejemplo: unidad, metro, litro o caja.">
-            <input
-              required
-              value={String(data.unidad)}
-              onChange={(e) => change("unidad", e.target.value)}
-            />
-          </Field>
-          <Field label="Tipo de producto">
-            <select
-              value={String(data.tipo_id || "")}
-              onChange={(e) => {
-                change("tipo_id", Number(e.target.value) || null);
-                change("atributos", {});
-              }}
-            >
-              <option value="">General</option>
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {str(t, "nombre")}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Categoría">
-            <select
-              value={String(data.categoria_id || "")}
-              onChange={(e) =>
-                change("categoria_id", Number(e.target.value) || null)
-              }
-            >
-              <option value="">Sin categoría</option>
-              {cats.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {str(t, "nombre")}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Precio de venta">
-            <input
-              type="number"
-              required
-              min="0"
-              step=".01"
-              value={String(data.precio)}
-              onChange={(e) => change("precio", e.target.value)}
-            />
-          </Field>
-          {can(user, "costos.ver") && (
-            <Field label="Costo unitario">
-              <input
-                type="number"
-                required
-                min="0"
-                step=".01"
-                value={String(data.costo)}
-                onChange={(e) => change("costo", e.target.value)}
-              />
-            </Field>
-          )}
-          <Field
-            label="Stock mínimo por almacén"
-            hint="Se mostrará una alerta cuando el stock sea igual o menor."
-          >
-            <input
-              type="number"
-              min="0"
-              step=".001"
-              value={String(data.stock_minimo)}
-              onChange={(e) => change("stock_minimo", e.target.value)}
-            />
-          </Field>
-        </div>
-        <h3 className="form-section">
-          <span>02</span> Imagen del producto
-        </h3>
-        {Boolean(row?.imagen) && row && !removePhoto && !photo && (
-          <div className="existing-photo">
-            <ProductThumb row={row} />
-            <button type="button" onClick={() => setRemovePhoto(true)}>
-              Quitar imagen actual
-            </button>
-          </div>
-        )}
-        <FilePicker
-          file={photo}
-          onChange={(f) => {
-            setPhoto(f);
-            setRemovePhoto(false);
-          }}
-          accept=".jpg,.jpeg,.png,.webp"
-          label="Agregar imagen"
-          hint="Opcional · JPG, PNG o WebP · máximo 5 MB"
-          preview
-        />
-        <div className="parent-selection">
-          <h3 className="form-section">
-            <span>03</span> Variantes y detalles
-          </h3>
-          <p>
-            <strong>Producto padre (opcional)</strong>
-          </p>
-          <p className="muted">
-            Deja vacío para un artículo independiente. La variante debe usar el
-            mismo tipo que su padre.
-          </p>
-          <ProductLookup
-            parentsOnly
-            excludeId={row?.id}
-            value={data.producto_padre_id ? parentProduct : null}
-            onChange={(p) => {
-              setParentProduct(p);
-              change("producto_padre_id", p.id);
-              change("tipo_id", p.tipo_id);
-              change("atributos", {});
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => change("producto_padre_id", null)}
-          >
-            Sin producto padre
-          </button>
-        </div>
-        <Field
-          label="Descripción"
-          hint="Describe compatibilidad, medidas o usos habituales."
-        >
-          <textarea
-            value={String(data.descripcion)}
-            onChange={(e) => change("descripcion", e.target.value)}
+        <p>
+          Vas a borrar <strong>{str(row, "nombre")}</strong>. Esta acción
+          elimina su ficha e imagen y solo se permite si no tiene variantes,
+          registros de inventario ni historial.
+        </p>
+        <p>
+          Para conservar un artículo que ya usaste, elige{" "}
+          <strong>Archivar</strong> en el catálogo.
+        </p>
+        <Field label={`Escribe el SKU ${str(row, "sku")} para confirmar`}>
+          <input
+            required
+            autoComplete="off"
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
           />
         </Field>
-        {fields.length > 0 && (
-          <>
-            <h3>Atributos del producto</h3>
-            <div className="form-grid">
-              {fields.map((f) => (
-                <Field
-                  key={f.clave}
-                  label={`${f.etiqueta}${f.obligatorio ? " *" : ""}`}
-                >
-                  {f.tipo === "seleccion" ? (
-                    <select
-                      required={f.obligatorio}
-                      value={String(attrs[f.clave] ?? "")}
-                      onChange={(e) =>
-                        change("atributos", {
-                          ...attrs,
-                          [f.clave]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Seleccionar</option>
-                      {f.opciones.map((o) => (
-                        <option key={o}>{o}</option>
-                      ))}
-                    </select>
-                  ) : f.tipo === "booleano" ? (
-                    <select
-                      value={String(attrs[f.clave] ?? "")}
-                      required={f.obligatorio}
-                      onChange={(e) =>
-                        change("atributos", {
-                          ...attrs,
-                          [f.clave]:
-                            e.target.value === ""
-                              ? null
-                              : e.target.value === "true",
-                        })
-                      }
-                    >
-                      <option value="">Sin definir</option>
-                      <option value="true">Sí</option>
-                      <option value="false">No</option>
-                    </select>
-                  ) : (
-                    <input
-                      required={f.obligatorio}
-                      type={
-                        f.tipo === "numero"
-                          ? "number"
-                          : f.tipo === "fecha"
-                            ? "date"
-                            : "text"
-                      }
-                      step={f.tipo === "numero" ? "any" : undefined}
-                      value={String(attrs[f.clave] ?? "")}
-                      onChange={(e) =>
-                        change("atributos", {
-                          ...attrs,
-                          [f.clave]:
-                            f.tipo === "numero"
-                              ? e.target.value === ""
-                                ? null
-                                : Number(e.target.value)
-                              : e.target.value,
-                        })
-                      }
-                    />
-                  )}
-                </Field>
-              ))}
-            </div>
-          </>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
         )}
         <div className="form-footer">
           <button type="button" onClick={close}>
             Cancelar
           </button>
-          <Save busy={busy} />
-        </div>
-      </form>
-    </Modal>
-  );
-}
-function MetaForm({
-  kind,
-  cats,
-  close,
-  saved,
-}: {
-  kind: string;
-  cats: Row[];
-  close: () => void;
-  saved: () => void;
-}) {
-  const [name, setName] = useState(""),
-    [parent, setParent] = useState(""),
-    [fields, setFields] = useState<Definition[]>([]);
-  const { busy, submit } = useSubmit();
-  const change = (i: number, key: string, value: unknown) =>
-    setFields((items) =>
-      items.map((f, n) => (n === i ? { ...f, [key]: value } : f)),
-    );
-  return (
-    <Modal
-      title={
-        kind === "tipos" ? "Tipo y atributos dinámicos" : "Nueva categoría"
-      }
-      close={close}
-    >
-      <form
-        onSubmit={(e) =>
-          submit(e, async () => {
-            await api(kind === "tipos" ? "/tipos" : "/categorias", {
-              method: "POST",
-              body: JSON.stringify(
-                kind === "tipos"
-                  ? { nombre: name, campos: fields }
-                  : { nombre: name, padre_id: Number(parent) || null },
-              ),
-            });
-            notify("Configuración guardada");
-            saved();
-          })
-        }
-      >
-        <Field label="Nombre">
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
-        {kind === "categorias" ? (
-          <Field label="Categoría padre">
-            <select value={parent} onChange={(e) => setParent(e.target.value)}>
-              <option value="">Principal</option>
-              {cats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {str(c, "nombre")}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : (
-          <>
-            <p className="muted">
-              Define campos como talla, material, modelo o compatibilidad.
-            </p>
-            {fields.map((f, i) => (
-              <div className="field-definition" key={i}>
-                <div className="form-grid">
-                  <Field label="Clave (sin espacios)">
-                    <input
-                      required
-                      pattern="[a-z][a-z0-9_]{0,39}"
-                      value={f.clave}
-                      onChange={(e) => change(i, "clave", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Etiqueta">
-                    <input
-                      required
-                      value={f.etiqueta}
-                      onChange={(e) => change(i, "etiqueta", e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Tipo">
-                    <select
-                      value={f.tipo}
-                      onChange={(e) => change(i, "tipo", e.target.value)}
-                    >
-                      {[
-                        "texto",
-                        "numero",
-                        "fecha",
-                        "booleano",
-                        "seleccion",
-                      ].map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  {f.tipo === "seleccion" && (
-                    <Field label="Opciones separadas por coma">
-                      <input
-                        required
-                        value={f.opciones.join(",")}
-                        onChange={(e) =>
-                          change(i, "opciones", e.target.value.split(","))
-                        }
-                      />
-                    </Field>
-                  )}
-                </div>
-                <label className="check">
-                  <input
-                    type="checkbox"
-                    checked={f.obligatorio}
-                    onChange={(e) => change(i, "obligatorio", e.target.checked)}
-                  />{" "}
-                  Obligatorio
-                </label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFields((fs) => fs.filter((_, j) => j !== i))
-                  }
-                >
-                  Quitar campo
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() =>
-                setFields((fs) => [
-                  ...fs,
-                  {
-                    clave: "",
-                    etiqueta: "",
-                    tipo: "texto",
-                    obligatorio: false,
-                    opciones: [],
-                  },
-                ])
-              }
-            >
-              + Añadir campo
-            </button>
-          </>
-        )}
-        <div className="form-footer">
-          <Save busy={busy} />
+          <button
+            className="action-danger"
+            type="submit"
+            disabled={busy || confirmation !== str(row, "sku")}
+          >
+            <Icon name="trash" size={18} />
+            {busy ? "Borrando…" : "Borrar definitivamente"}
+          </button>
         </div>
       </form>
     </Modal>

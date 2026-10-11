@@ -2,15 +2,15 @@
 
 Plantilla de gestión empresarial con FastAPI, React y PostgreSQL. Cada empresa utiliza su propia instalación, base de datos y configuración. Dentro de la instalación puede haber varias sedes y almacenes. No hay planes ni suscripciones SaaS.
 
-## Versión 0.2.1
+## Versión 0.2.2
 
 Esta entrega incorpora la interfaz web y los flujos de operación sobre la base inicial. Incluye acceso con sesiones, usuarios y roles configurables, control por sede, catálogo con atributos dinámicos y variantes, inventario y Kardex, transferencias, clientes y proveedores, recepción de compras, ventas, cobros y anulación, constancias PDF internas, QR, importación XLSX/CSV con prevalidación, exportación, estadísticas, auditoría, adaptador LLM y pronósticos con evaluación temporal.
 
-Los pronósticos requieren historial; el LLM requiere proveedor y modelo configurados. La constancia de venta es un documento interno: no reemplaza una factura o boleta electrónica. Consulta el alcance pendiente en [docs/requisitos.md](docs/requisitos.md).
+IA y pronósticos quedan para una etapa posterior de trabajo; se conserva su base existente sin ampliarla. Los pronósticos requieren historial; el LLM requiere proveedor y modelo configurados. La constancia de venta es un documento interno: no reemplaza una factura o boleta electrónica. Consulta el alcance pendiente en [docs/requisitos.md](docs/requisitos.md).
 
 ## Demo Repuestos
 
-La versión 0.2.1 añade identidad amarillo/negro, logo genérico, ilustraciones SVG, menú con grupos desplegables y barra contraíble, formularios guiados y carga de imágenes de productos. Una demostración aislada crea 80 productos, 40 clientes, 10 proveedores, 2 sedes, 3 almacenes, 6 cuentas y 180 días completos de operaciones ficticias.
+Demo Repuestos mantiene su identidad amarillo/negro, logo e ilustraciones SVG. La versión 0.2.2 incorpora texto más legible, navegación ordenada por Análisis → Administración → Operaciones, controles fijos dentro del menú, acciones con colores y sonidos opcionales. Productos tiene filtros combinados, vista de ficha, editor en página con vista previa en vivo y borrado protegido. Cada módulo incluye Estadísticas y la pantalla global reúne los indicadores autorizados. Una demostración aislada crea 80 productos, 40 clientes, 10 proveedores, 2 sedes, 3 almacenes, 6 cuentas y 180 días completos de operaciones ficticias.
 
 Tras copiar la entrega y preparar el entorno, detén el servidor anterior y ejecuta desde la raíz:
 
@@ -39,9 +39,9 @@ Para desarrollar la interfaz, ejecuta `npm run dev` desde `frontend` y abre `htt
 - [docs/requisitos.md](docs/requisitos.md): alcance, estados y criterios de aceptación.
 - [docs/arquitectura.md](docs/arquitectura.md): estructura, modelo de datos y reglas.
 - [docs/pantallas-permisos.md](docs/pantallas-permisos.md): navegación y autorizaciones.
-- [docs/manual-usuario.md](docs/manual-usuario.md): procedimientos de la versión 0.2.1.
+- [docs/manual-usuario.md](docs/manual-usuario.md): procedimientos de la versión 0.2.2.
 - [docs/verificacion.md](docs/verificacion.md): verificaciones ejecutadas y límites.
-- `docs/Sistema_Almacenamiento_Documento_Maestro_v0.2.1.docx`: documento maestro actualizado.
+- `docs/Sistema_Almacenamiento_Documento_Maestro_v0.2.2.docx`: documento maestro actualizado.
 
 ## Comprobaciones
 

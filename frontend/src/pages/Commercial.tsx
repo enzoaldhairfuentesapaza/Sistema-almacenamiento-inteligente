@@ -1,3 +1,5 @@
+import { ModuleStatistics } from "../Statistics";
+import { Icon } from "../icons";
 import { useState } from "react";
 import {
   api,
@@ -49,9 +51,11 @@ export default function Commercial({
       `${path}?limit=50&offset=${offset}&q=${encodeURIComponent(q)}`,
     );
   const allowed = can(user, purchase ? "compras.crear" : "ventas.crear");
+  const [statsTab, setStatsTab] = useState("registros");
   return (
     <>
       <Title
+        icon={purchase ? "purchase" : "sale"}
         title={purchase ? "Compras y recepciones" : "Ventas y cobros"}
         subtitle={
           purchase
@@ -59,164 +63,187 @@ export default function Commercial({
             : "Confirma ventas, controla saldos y consulta sus documentos."
         }
       >
-        {allowed && (
-          <button className="primary" onClick={() => setOpen(true)}>
+        {statsTab !== "estadisticas" && allowed && (
+          <button className="action-create" onClick={() => setOpen(true)}>
             + {purchase ? "Recibir compra" : "Nueva venta"}
           </button>
         )}
       </Title>
-      <section className="panel">
-        <div className="toolbar">
-          <input
-            aria-label="Buscar operaciones"
-            placeholder={
-              purchase
-                ? "Buscar número, proveedor, almacén o referencia"
-                : "Buscar número, cliente o almacén"
-            }
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setOffset(0);
-            }}
-          />
-          <span className="muted">50 registros por página</span>
-        </div>
-        <ListState {...data} />
-        <DataTable
-          rows={data.rows}
-          columns={[
-            {
-              title: "Número",
-              cell: (r) => (purchase ? `CO-${r.id}` : str(r, "numero")),
-            },
-            { title: "Fecha", cell: (r) => date(r.fecha) },
-            { title: "Almacén", cell: (r) => str(r, "almacen") },
-            {
-              title: "Total",
-              cell: (r) => money(r.total, str(r, "moneda") || currency),
-            },
-            ...(purchase
-              ? [
-                  {
-                    title: "Referencia",
-                    cell: (r: Row) => str(r, "referencia"),
-                  },
-                  {
-                    title: "Acciones",
-                    cell: (r: Row) => (
-                      <button
-                        onClick={() =>
-                          api<Row>(`/compras/${r.id}`)
-                            .then(setDetail)
-                            .catch(problem)
-                        }
-                      >
-                        Ver detalle
-                      </button>
-                    ),
-                  },
-                ]
-              : [
-                  {
-                    title: "Pendiente",
-                    cell: (r: Row) =>
-                      money(
-                        r.estado === "anulada"
-                          ? 0
-                          : num(r, "total") - num(r, "pagado"),
-                        str(r, "moneda"),
-                      ),
-                  },
-                  {
-                    title: "Estado",
-                    cell: (r: Row) => (
-                      <Badge good={r.estado === "confirmada"}>
-                        {str(r, "estado")}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    title: "Acciones",
-                    cell: (r: Row) => (
-                      <button
-                        onClick={() =>
-                          api<Row>(`/ventas/${r.id}`)
-                            .then(setDetail)
-                            .catch(problem)
-                        }
-                      >
-                        Ver detalle
-                      </button>
-                    ),
-                  },
-                ]),
-          ]}
-        />
-        <Paginator
-          offset={offset}
-          size={50}
-          count={data.rows.length}
-          setOffset={setOffset}
-        />
-      </section>
-      {open && (
-        <OrderForm
-          purchase={purchase}
-          currency={currency}
-          close={() => setOpen(false)}
-          saved={() => {
-            setOpen(false);
-            data.reload();
-          }}
-        />
-      )}
-      {detail && !purchase && (
-        <SaleDetail
-          row={detail}
-          user={user}
-          close={() => setDetail(null)}
-          saved={async () => {
-            setDetail(await api<Row>(`/ventas/${detail.id}`));
-            data.reload();
-          }}
-        />
-      )}
-      {detail && purchase && (
-        <Modal
-          title={`Recepción CO-${detail.id}`}
-          close={() => setDetail(null)}
+      <div className="tabs">
+        <button
+          className={statsTab === "registros" ? "active" : ""}
+          onClick={() => setStatsTab("registros")}
         >
-          <p>
-            <strong>{str(detail, "proveedor")}</strong> ·{" "}
-            {str(detail, "almacen")}
-          </p>
-          <p className="muted">
-            {date(detail.fecha)} ·{" "}
-            {str(detail, "referencia") || "Sin referencia"}
-          </p>
+          <Icon name="file" size={18} />
+          Registros
+        </button>
+        {can(user, "reportes.ver") && (
+          <button
+            className={statsTab === "estadisticas" ? "active" : ""}
+            onClick={() => setStatsTab("estadisticas")}
+          >
+            <Icon name="chart" size={18} />
+            Estadísticas
+          </button>
+        )}
+      </div>
+      {statsTab === "estadisticas" && (
+        <ModuleStatistics module={purchase ? "compras" : "ventas"} />
+      )}
+      <div hidden={statsTab === "estadisticas"}>
+        <section className="panel">
+          <div className="toolbar">
+            <input
+              aria-label="Buscar operaciones"
+              placeholder={
+                purchase
+                  ? "Buscar número, proveedor, almacén o referencia"
+                  : "Buscar número, cliente o almacén"
+              }
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setOffset(0);
+              }}
+            />
+            <span className="muted">50 registros por página</span>
+          </div>
+          <ListState {...data} />
           <DataTable
-            rows={(detail.items || []) as Row[]}
+            rows={data.rows}
             columns={[
-              { title: "Producto", cell: (r) => str(r, "nombre") },
-              { title: "Cantidad", cell: (r) => str(r, "cantidad") },
               {
-                title: "Costo unitario",
-                cell: (r) => money(r.costo, currency),
+                title: "Número",
+                cell: (r) => (purchase ? `CO-${r.id}` : str(r, "numero")),
               },
-              { title: "Importe", cell: (r) => money(r.importe, currency) },
+              { title: "Fecha", cell: (r) => date(r.fecha) },
+              { title: "Almacén", cell: (r) => str(r, "almacen") },
+              {
+                title: "Total",
+                cell: (r) => money(r.total, str(r, "moneda") || currency),
+              },
+              ...(purchase
+                ? [
+                    {
+                      title: "Referencia",
+                      cell: (r: Row) => str(r, "referencia"),
+                    },
+                    {
+                      title: "Acciones",
+                      cell: (r: Row) => (
+                        <button
+                          onClick={() =>
+                            api<Row>(`/compras/${r.id}`)
+                              .then(setDetail)
+                              .catch(problem)
+                          }
+                        >
+                          Ver detalle
+                        </button>
+                      ),
+                    },
+                  ]
+                : [
+                    {
+                      title: "Pendiente",
+                      cell: (r: Row) =>
+                        money(
+                          r.estado === "anulada"
+                            ? 0
+                            : num(r, "total") - num(r, "pagado"),
+                          str(r, "moneda"),
+                        ),
+                    },
+                    {
+                      title: "Estado",
+                      cell: (r: Row) => (
+                        <Badge good={r.estado === "confirmada"}>
+                          {str(r, "estado")}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      title: "Acciones",
+                      cell: (r: Row) => (
+                        <button
+                          onClick={() =>
+                            api<Row>(`/ventas/${r.id}`)
+                              .then(setDetail)
+                              .catch(problem)
+                          }
+                        >
+                          Ver detalle
+                        </button>
+                      ),
+                    },
+                  ]),
             ]}
           />
-          <div className="order-total">
-            <span>Total de recepción</span>
-            <strong>{money(detail.total, currency)}</strong>
-          </div>
-          <p className="muted">
-            Los costos corresponden a esta recepción. La valoración del catálogo
-            se configura por separado.
-          </p>
-        </Modal>
-      )}
+          <Paginator
+            offset={offset}
+            size={50}
+            count={data.rows.length}
+            setOffset={setOffset}
+          />
+        </section>
+        {open && (
+          <OrderForm
+            purchase={purchase}
+            currency={currency}
+            close={() => setOpen(false)}
+            saved={() => {
+              setOpen(false);
+              data.reload();
+            }}
+          />
+        )}
+        {detail && !purchase && (
+          <SaleDetail
+            row={detail}
+            user={user}
+            close={() => setDetail(null)}
+            saved={async () => {
+              setDetail(await api<Row>(`/ventas/${detail.id}`));
+              data.reload();
+            }}
+          />
+        )}
+        {detail && purchase && (
+          <Modal
+            title={`Recepción CO-${detail.id}`}
+            close={() => setDetail(null)}
+          >
+            <p>
+              <strong>{str(detail, "proveedor")}</strong> ·{" "}
+              {str(detail, "almacen")}
+            </p>
+            <p className="muted">
+              {date(detail.fecha)} ·{" "}
+              {str(detail, "referencia") || "Sin referencia"}
+            </p>
+            <DataTable
+              rows={(detail.items || []) as Row[]}
+              columns={[
+                { title: "Producto", cell: (r) => str(r, "nombre") },
+                { title: "Cantidad", cell: (r) => str(r, "cantidad") },
+                {
+                  title: "Costo unitario",
+                  cell: (r) => money(r.costo, currency),
+                },
+                { title: "Importe", cell: (r) => money(r.importe, currency) },
+              ]}
+            />
+            <div className="order-total">
+              <span>Total de recepción</span>
+              <strong>{money(detail.total, currency)}</strong>
+            </div>
+            <p className="muted">
+              Los costos corresponden a esta recepción. La valoración del
+              catálogo se configura por separado.
+            </p>
+          </Modal>
+        )}
+      </div>
     </>
   );
 }
@@ -655,7 +682,7 @@ function SaleDetail({
             Se devuelve el stock y se conserva el historial. Los cobros
             requieren conciliación de reembolso.
           </p>
-          <Save busy={busy} label="Confirmar anulación" />
+          <Save busy={busy} label="Confirmar anulación" variant="danger" />
         </form>
       )}
     </Modal>

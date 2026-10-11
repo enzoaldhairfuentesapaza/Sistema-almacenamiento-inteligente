@@ -10,6 +10,7 @@ from app.api.routes import (
     inteligencia,
     inventario,
     organizacion,
+    reportes,
 )
 
 api_router = APIRouter()
@@ -23,5 +24,6 @@ for module in (
     comercial,
     excel,
     inteligencia,
+    reportes,
 ):
     api_router.include_router(module.router)

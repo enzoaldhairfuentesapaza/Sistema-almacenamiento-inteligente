@@ -8,14 +8,19 @@ export function Title({
   title,
   subtitle,
   children,
+  icon = "box",
 }: {
   title: string;
   subtitle: string;
+  icon?: string;
   children?: ReactNode;
 }) {
   return (
     <div className="page-heading">
-      <div>
+      <span className="section-symbol">
+        <Icon name={icon} size={28} />
+      </span>
+      <div className="page-heading-text">
         <span className="eyebrow">ESPACIO DE TRABAJO</span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
@@ -176,12 +181,18 @@ export function Field({
 export function Save({
   busy,
   label = "Guardar",
+  variant = "save",
 }: {
   busy: boolean;
   label?: string;
+  variant?: "save" | "danger" | "view";
 }) {
   return (
-    <button disabled={busy} className="primary" type="submit">
+    <button
+      disabled={busy}
+      className={`primary action-${variant}`}
+      type="submit"
+    >
       {!busy && <Icon name="check" size={16} />}
       {busy ? "Guardando…" : label}
     </button>
@@ -324,7 +335,7 @@ export function FilePicker({
       />
       <button
         type="button"
-        className="primary"
+        className="action-view"
         onClick={() => input.current?.click()}
       >
         <Icon name="upload" size={16} />
@@ -378,5 +389,44 @@ export function ProductThumb({ row }: { row: Row }) {
     <span className="product-thumb">
       <Icon name="box" size={22} />
     </span>
+  );
+}
+
+export interface SectionItem {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+}
+export function SectionTabs({
+  items,
+  value,
+  onChange,
+  label = "Subsecciones",
+}: {
+  items: SectionItem[];
+  value: string;
+  onChange: (id: string) => void;
+  label?: string;
+}) {
+  return (
+    <nav className="section-tabs" aria-label={label}>
+      {items.map((item) => (
+        <button
+          type="button"
+          key={item.id}
+          aria-pressed={value === item.id}
+          className={value === item.id ? "active" : ""}
+          onClick={() => onChange(item.id)}
+        >
+          <Icon name={item.icon || "box"} size={22} />
+          <span>
+            <strong>{item.label}</strong>
+            {item.description && <small>{item.description}</small>}
+          </span>
+          <Icon name="chevron" size={16} />
+        </button>
+      ))}
+    </nav>
   );
 }

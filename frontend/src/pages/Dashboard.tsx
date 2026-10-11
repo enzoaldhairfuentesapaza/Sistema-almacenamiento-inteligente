@@ -33,6 +33,7 @@ export default function Dashboard({
   return (
     <>
       <Title
+        icon="home"
         title="Tu negocio, de un vistazo"
         subtitle="Existencias, ventas y señales que necesitan tu atención."
       />
@@ -49,9 +50,9 @@ export default function Dashboard({
                 Revisar inventario <Icon name="arrow" size={16} />
               </a>
             )}
-            {can(user, "pronosticos.ver") && (
-              <a className="button" href="#inteligencia">
-                Explorar pronósticos <Icon name="sparkle" size={16} />
+            {can(user, "reportes.ver") && (
+              <a className="button" href="#estadisticas">
+                Ver estadísticas <Icon name="chart" size={16} />
               </a>
             )}
           </div>
@@ -71,7 +72,7 @@ export default function Dashboard({
             permission: "inventario.mover",
             href: "inventario",
             icon: "inventory",
-            title: "Mover existencias",
+            title: "Registrar movimiento",
             text: "Entradas, salidas y transferencias",
           },
           {

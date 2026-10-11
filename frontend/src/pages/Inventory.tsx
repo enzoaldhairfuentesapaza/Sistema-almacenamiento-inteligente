@@ -1,3 +1,5 @@
+import { ModuleStatistics } from "../Statistics";
+import { Icon } from "../icons";
 import { useState } from "react";
 import { api, can, notify, num, str, date } from "../api";
 import type { Row, User } from "../api";
@@ -26,11 +28,12 @@ export default function Inventory({ user }: { user: User }) {
   return (
     <>
       <Title
+        icon="inventory"
         title="Inventario y movimientos"
         subtitle="Cada entrada, salida y transferencia conserva su historia."
       >
-        {can(user, "inventario.mover") && (
-          <button className="primary" onClick={() => setOpen(true)}>
+        {tab !== "estadisticas" && can(user, "inventario.mover") && (
+          <button className="action-create" onClick={() => setOpen(true)}>
             + Registrar movimiento
           </button>
         )}
@@ -54,135 +57,147 @@ export default function Inventory({ user }: { user: User }) {
         >
           Kardex
         </button>
+        {can(user, "reportes.ver") && (
+          <button
+            className={tab === "estadisticas" ? "active" : ""}
+            onClick={() => setTab("estadisticas")}
+          >
+            <Icon name="chart" size={18} />
+            Estadísticas
+          </button>
+        )}
       </div>
-      <section className="panel">
-        <div className="toolbar">
-          <input
-            aria-label="Buscar inventario"
-            placeholder="Buscar por nombre o SKU"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setOffset(0);
+      {tab === "estadisticas" && <ModuleStatistics module={"inventario"} />}
+      <div hidden={tab === "estadisticas"}>
+        <section className="panel">
+          <div className="toolbar">
+            <input
+              aria-label="Buscar inventario"
+              placeholder="Buscar por nombre o SKU"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setOffset(0);
+              }}
+            />
+            <select
+              aria-label="Filtrar almacén"
+              value={store}
+              onChange={(e) => {
+                setStore(e.target.value);
+                setOffset(0);
+              }}
+            >
+              <option value="">Todos mis almacenes</option>
+              {warehouses.rows.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {str(a, "nombre")} · {str(a, "sede")}
+                </option>
+              ))}
+            </select>
+            <button onClick={rows.reload}>Actualizar</button>
+          </div>
+          <ListState {...rows} />
+          <DataTable
+            rows={rows.rows}
+            columns={
+              tab === "stock"
+                ? [
+                    {
+                      title: "Producto",
+                      cell: (r) => (
+                        <>
+                          <strong>{str(r, "producto")}</strong>
+                          <small>{str(r, "sku")}</small>
+                        </>
+                      ),
+                    },
+                    { title: "Almacén", cell: (r) => str(r, "almacen") },
+                    {
+                      title: "Cantidad",
+                      cell: (r) => <strong>{str(r, "cantidad")}</strong>,
+                    },
+                    { title: "Mínimo", cell: (r) => str(r, "stock_minimo") },
+                    {
+                      title: "Señal",
+                      cell: (r) => (
+                        <Badge good={!r.alerta}>
+                          {r.alerta ? "Reponer" : "Disponible"}
+                        </Badge>
+                      ),
+                    },
+                  ]
+                : [
+                    { title: "Fecha", cell: (r) => date(r.fecha) },
+                    {
+                      title: "Producto",
+                      cell: (r) => (
+                        <>
+                          {str(r, "producto")}
+                          <small>{str(r, "sku")}</small>
+                        </>
+                      ),
+                    },
+                    { title: "Almacén", cell: (r) => str(r, "almacen") },
+                    {
+                      title: "Operación",
+                      cell: (r) =>
+                        ({
+                          entrada: "Entrada",
+                          salida: "Salida",
+                          venta: "Venta",
+                          compra: "Compra recibida",
+                          ajuste: "Ajuste",
+                          anulacion: "Anulación",
+                          transferencia_salida: "Transferencia: salida",
+                          transferencia_entrada: "Transferencia: entrada",
+                        })[str(r, "tipo")] || str(r, "tipo"),
+                    },
+                    {
+                      title: "Cambio",
+                      cell: (r) => (
+                        <span
+                          className={
+                            num(r, "cantidad") > 0 ? "positive" : "negative"
+                          }
+                        >
+                          {num(r, "cantidad") > 0 ? "+" : ""}
+                          {str(r, "cantidad")}
+                        </span>
+                      ),
+                    },
+                    { title: "Saldo", cell: (r) => str(r, "saldo") },
+                    {
+                      title: "Motivo",
+                      cell: (r) => (
+                        <>
+                          {str(r, "motivo")}
+                          <small>{str(r, "referencia")}</small>
+                        </>
+                      ),
+                    },
+                  ]
+            }
+          />
+          <Paginator
+            offset={offset}
+            size={50}
+            count={rows.rows.length}
+            setOffset={setOffset}
+          />
+        </section>
+        {open && (
+          <MoveForm
+            warehouses={warehouses.rows.filter((a) => a.activo)}
+            user={user}
+            close={() => setOpen(false)}
+            saved={() => {
+              setOpen(false);
+              rows.reload();
             }}
           />
-          <select
-            aria-label="Filtrar almacén"
-            value={store}
-            onChange={(e) => {
-              setStore(e.target.value);
-              setOffset(0);
-            }}
-          >
-            <option value="">Todos mis almacenes</option>
-            {warehouses.rows.map((a) => (
-              <option key={a.id} value={a.id}>
-                {str(a, "nombre")} · {str(a, "sede")}
-              </option>
-            ))}
-          </select>
-          <button onClick={rows.reload}>Actualizar</button>
-        </div>
-        <ListState {...rows} />
-        <DataTable
-          rows={rows.rows}
-          columns={
-            tab === "stock"
-              ? [
-                  {
-                    title: "Producto",
-                    cell: (r) => (
-                      <>
-                        <strong>{str(r, "producto")}</strong>
-                        <small>{str(r, "sku")}</small>
-                      </>
-                    ),
-                  },
-                  { title: "Almacén", cell: (r) => str(r, "almacen") },
-                  {
-                    title: "Cantidad",
-                    cell: (r) => <strong>{str(r, "cantidad")}</strong>,
-                  },
-                  { title: "Mínimo", cell: (r) => str(r, "stock_minimo") },
-                  {
-                    title: "Señal",
-                    cell: (r) => (
-                      <Badge good={!r.alerta}>
-                        {r.alerta ? "Reponer" : "Disponible"}
-                      </Badge>
-                    ),
-                  },
-                ]
-              : [
-                  { title: "Fecha", cell: (r) => date(r.fecha) },
-                  {
-                    title: "Producto",
-                    cell: (r) => (
-                      <>
-                        {str(r, "producto")}
-                        <small>{str(r, "sku")}</small>
-                      </>
-                    ),
-                  },
-                  { title: "Almacén", cell: (r) => str(r, "almacen") },
-                  {
-                    title: "Operación",
-                    cell: (r) =>
-                      ({
-                        entrada: "Entrada",
-                        salida: "Salida",
-                        venta: "Venta",
-                        compra: "Compra recibida",
-                        ajuste: "Ajuste",
-                        anulacion: "Anulación",
-                        transferencia_salida: "Transferencia: salida",
-                        transferencia_entrada: "Transferencia: entrada",
-                      })[str(r, "tipo")] || str(r, "tipo"),
-                  },
-                  {
-                    title: "Cambio",
-                    cell: (r) => (
-                      <span
-                        className={
-                          num(r, "cantidad") > 0 ? "positive" : "negative"
-                        }
-                      >
-                        {num(r, "cantidad") > 0 ? "+" : ""}
-                        {str(r, "cantidad")}
-                      </span>
-                    ),
-                  },
-                  { title: "Saldo", cell: (r) => str(r, "saldo") },
-                  {
-                    title: "Motivo",
-                    cell: (r) => (
-                      <>
-                        {str(r, "motivo")}
-                        <small>{str(r, "referencia")}</small>
-                      </>
-                    ),
-                  },
-                ]
-          }
-        />
-        <Paginator
-          offset={offset}
-          size={50}
-          count={rows.rows.length}
-          setOffset={setOffset}
-        />
-      </section>
-      {open && (
-        <MoveForm
-          warehouses={warehouses.rows.filter((a) => a.activo)}
-          user={user}
-          close={() => setOpen(false)}
-          saved={() => {
-            setOpen(false);
-            rows.reload();
-          }}
-        />
-      )}
+        )}
+      </div>
     </>
   );
 }

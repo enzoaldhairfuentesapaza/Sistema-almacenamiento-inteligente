@@ -1,3 +1,5 @@
+import { ModuleStatistics } from "../Statistics";
+import { Icon } from "../icons";
 import { useState } from "react";
 import { api, notify, str } from "../api";
 import type { Row } from "../api";
@@ -13,12 +15,15 @@ export default function Access() {
   return (
     <>
       <Title
+        icon="users"
         title="Usuarios y permisos"
         subtitle="El propietario define los accesos y las sedes de cada persona."
       >
-        <button className="primary" onClick={() => setEdit(null)}>
-          + {tab === "usuarios" ? "Nuevo usuario" : "Nuevo rol"}
-        </button>
+        {tab !== "estadisticas" && (
+          <button className="action-create" onClick={() => setEdit(null)}>
+            + {tab === "usuarios" ? "Nuevo usuario" : "Nuevo rol"}
+          </button>
+        )}
       </Title>
       <div className="tabs">
         <button
@@ -33,111 +38,127 @@ export default function Access() {
         >
           Roles
         </button>
+
+        <button
+          className={tab === "estadisticas" ? "active" : ""}
+          onClick={() => setTab("estadisticas")}
+        >
+          <Icon name="chart" size={18} />
+          Estadísticas
+        </button>
       </div>
-      <section className="panel">
-        <DataTable
-          rows={tab === "usuarios" ? users.rows : roles.rows}
-          columns={
-            tab === "usuarios"
-              ? [
-                  {
-                    title: "Usuario",
-                    cell: (r) => (
-                      <>
-                        <strong>{str(r, "nombre")}</strong>
-                        <small>{str(r, "email")}</small>
-                      </>
-                    ),
-                  },
-                  {
-                    title: "Roles",
-                    cell: (r) =>
-                      r.propietario
-                        ? "Propietario"
-                        : (r.roles as number[])
-                            .map((id) =>
-                              str(
-                                roles.rows.find((a) => a.id === id) || {
-                                  id: 0,
-                                },
-                                "nombre",
-                              ),
-                            )
-                            .join(", "),
-                  },
-                  {
-                    title: "Sedes",
-                    cell: (r) =>
-                      r.propietario
-                        ? "Todas"
-                        : (r.sedes as number[])
-                            .map((id) =>
-                              str(
-                                sites.rows.find((a) => a.id === id) || {
-                                  id: 0,
-                                },
-                                "nombre",
-                              ),
-                            )
-                            .join(", ") || "Sin acceso",
-                  },
-                  {
-                    title: "Estado",
-                    cell: (r) => (
-                      <Badge good={Boolean(r.activo)}>
-                        {r.activo ? "Activo" : "Bloqueado"}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    title: "Acciones",
-                    cell: (r) =>
-                      !r.propietario && (
-                        <button onClick={() => setEdit(r)}>Editar</button>
+      {tab === "estadisticas" && <ModuleStatistics module={"accesos"} />}
+      <div hidden={tab === "estadisticas"}>
+        <section className="panel">
+          <DataTable
+            rows={tab === "usuarios" ? users.rows : roles.rows}
+            columns={
+              tab === "usuarios"
+                ? [
+                    {
+                      title: "Usuario",
+                      cell: (r) => (
+                        <>
+                          <strong>{str(r, "nombre")}</strong>
+                          <small>{str(r, "email")}</small>
+                        </>
                       ),
-                  },
-                ]
-              : [
-                  { title: "Rol", cell: (r) => str(r, "nombre") },
-                  {
-                    title: "Permisos",
-                    cell: (r) => (r.permisos as string[]).length,
-                  },
-                  {
-                    title: "Acciones",
-                    cell: (r) => (
-                      <button onClick={() => setEdit(r)}>
-                        Editar permisos
-                      </button>
-                    ),
-                  },
-                ]
-          }
-        />
-      </section>
-      {edit !== undefined &&
-        (tab === "roles" ? (
-          <RoleForm
-            row={edit}
-            permissions={perms.rows}
-            close={() => setEdit(undefined)}
-            saved={() => {
-              setEdit(undefined);
-              roles.reload();
-            }}
+                    },
+                    {
+                      title: "Roles",
+                      cell: (r) =>
+                        r.propietario
+                          ? "Propietario"
+                          : (r.roles as number[])
+                              .map((id) =>
+                                str(
+                                  roles.rows.find((a) => a.id === id) || {
+                                    id: 0,
+                                  },
+                                  "nombre",
+                                ),
+                              )
+                              .join(", "),
+                    },
+                    {
+                      title: "Sedes",
+                      cell: (r) =>
+                        r.propietario
+                          ? "Todas"
+                          : (r.sedes as number[])
+                              .map((id) =>
+                                str(
+                                  sites.rows.find((a) => a.id === id) || {
+                                    id: 0,
+                                  },
+                                  "nombre",
+                                ),
+                              )
+                              .join(", ") || "Sin acceso",
+                    },
+                    {
+                      title: "Estado",
+                      cell: (r) => (
+                        <Badge good={Boolean(r.activo)}>
+                          {r.activo ? "Activo" : "Bloqueado"}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      title: "Acciones",
+                      cell: (r) =>
+                        !r.propietario && (
+                          <button
+                            className="action-edit"
+                            onClick={() => setEdit(r)}
+                          >
+                            Editar
+                          </button>
+                        ),
+                    },
+                  ]
+                : [
+                    { title: "Rol", cell: (r) => str(r, "nombre") },
+                    {
+                      title: "Permisos",
+                      cell: (r) => (r.permisos as string[]).length,
+                    },
+                    {
+                      title: "Acciones",
+                      cell: (r) => (
+                        <button onClick={() => setEdit(r)}>
+                          Editar permisos
+                        </button>
+                      ),
+                    },
+                  ]
+            }
           />
-        ) : (
-          <UserForm
-            row={edit}
-            roles={roles.rows}
-            sites={sites.rows}
-            close={() => setEdit(undefined)}
-            saved={() => {
-              setEdit(undefined);
-              users.reload();
-            }}
-          />
-        ))}
+        </section>
+        {edit !== undefined &&
+          (tab === "roles" ? (
+            <RoleForm
+              row={edit}
+              permissions={perms.rows}
+              close={() => setEdit(undefined)}
+              saved={() => {
+                setEdit(undefined);
+                roles.reload();
+              }}
+            />
+          ) : (
+            <UserForm
+              row={edit}
+              roles={roles.rows}
+              sites={sites.rows}
+              close={() => setEdit(undefined)}
+              saved={() => {
+                setEdit(undefined);
+                users.reload();
+              }}
+            />
+          ))}
+      </div>
     </>
   );
 }

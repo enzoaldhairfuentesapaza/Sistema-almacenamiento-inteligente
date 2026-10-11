@@ -1,4 +1,4 @@
-# Requisitos funcionales · v0.2.1
+# Requisitos funcionales · v0.2.2
 
 Fecha: 10/10/2026. Desarrolla el Documento Maestro v0.1 y registra el alcance real de la entrega. Una instalación tiene una empresa y su propia base; admite varias sedes y almacenes. No incluye suscripciones, planes ni gestión centralizada de clientes del proveedor.
 
@@ -8,12 +8,12 @@ Fecha: 10/10/2026. Desarrolla el Documento Maestro v0.1 y registra el alcance re
 
 ## Catálogo de requisitos
 
-| ID | Disponible en v0.2.1 | Estado | Extensiones pendientes del v0.1 |
+| ID | Disponible en v0.2.2 | Estado | Extensiones pendientes del v0.1 |
 | --- | --- | --- | --- |
 | F01 | Empresa única, RUC, moneda, zona horaria, sedes, almacenes y estados | Parcial | Logo configurable desde la interfaz, contacto de empresa, responsables, nomenclatura y parámetros generales de impuestos |
 | F02 | Login/logout, sesiones, cambio de contraseña, alta/edición/bloqueo de usuarios, recuperación local | Parcial | Recuperación por correo, MFA, indicador dedicado del último acceso |
 | F03 | Roles múltiples, acciones, protección de costos, alcance por sede, administración reservada | Parcial | Doble aprobación, alcance por almacén y otros permisos por campo |
-| F04 | SKU único, búsqueda por nombre/SKU/marca, categorías jerárquicas, edición, imágenes y archivo de productos | Parcial | Documentos adjuntos, etiquetas, edición/baja de categorías y filtros de atributos/proveedor |
+| F04 | SKU único; filtros de precio/atributos/estado/stock; categorías; ficha, editor con vista previa, imágenes, archivo y borrado protegido | Parcial | Documentos adjuntos, etiquetas, edición/baja de categorías y filtros por proveedor |
 | F05 | Tipos configurables; texto, número, fecha, booleano y selección; campos requeridos; variantes independientes | Parcial | Campos de archivo, series/activos, conversión de unidades y matriz masiva de variantes |
 | F06 | Stock por almacén, entradas/salidas/ajustes/transferencias, saldo y Kardex, cantidades validadas | Parcial | Reservas, ubicaciones internas, devolución parcial, mermas separadas y conteo físico asistido |
 | F07 | Plantilla XLSX/CSV, vista previa/error por fila, actualización por SKU, lote atómico y exportaciones | Parcial | Mapeo libre de columnas, importación de stock y filtros personalizados de exportación |
@@ -21,12 +21,12 @@ Fecha: 10/10/2026. Desarrolla el Documento Maestro v0.1 y registra el alcance re
 | F09 | Clientes/proveedores, recepción completa, detalle/costos por recepción y stock | Parcial | Orden previa, recepción parcial, devolución al proveedor y costeo promedio/FIFO |
 | F10 | Venta, descuento/impuesto, cobros parciales, saldo, medios de pago, anulación y PDF interno | Parcial | SUNAT, notas de crédito, conciliación automática, cierre de caja y devolución parcial |
 | F11 | Alertas visuales de mínimo/agotado en existencias registradas | Parcial | Lotes, vencimientos, series, avisos externos y anomalías |
-| F12 | Dashboard, ventas diarias/ranking/saldos, valoración autorizada de stock y exportación de datos | Parcial | Comparativos, márgenes realizados, filtros completos, compras e informes estadísticos PDF |
+| F12 | Vista general, estadísticas de nueve módulos, período local, ranking/importes, valoración autorizada y exportación | Parcial | Comparativos avanzados, márgenes realizados e informes estadísticos PDF |
 | F13 | Adaptador LLM con herramientas autorizadas de catálogo, stock y resumen | Condicionado | Activar/probar proveedor real, RAG, conversación persistente y evaluación de exactitud |
 | F14 | Ridge de calendario versus base semanal, backtesting, MAE/WAPE, bandas y horizonte 1–30 días | Condicionado | 56 días completos reales; feriados/campañas, otros modelos, reposición e historial de ejecuciones |
 | F15 | Argon2, cookie HttpOnly, CSRF, autorización, auditoría, controles Excel y scripts backup/restore | Parcial | Probar restauración PostgreSQL, retención/programación de respaldo y límites distribuidos de login |
 | F16 | API /api/v1, OpenAPI, validación, filtros/paginación y pruebas | Implementado en alcance base | Autenticación futura app móvil/POS e integraciones externas |
-| F17 | React responsive, identidad amarillo/negro, logo SVG, menú desplegable/contraíble, formularios guiados y archivos con vista previa | Implementado en alcance base | Auditoría formal de accesibilidad, cámara y modo sin conexión |
+| F17 | React responsive, texto legible, menú con control fijo, acciones con colores, estadísticas por sección, ficha en vivo y alertas con sonido opcional | Implementado en alcance base | Auditoría formal de accesibilidad, cámara y modo sin conexión |
 
 ## Reglas de negocio
 
@@ -63,7 +63,7 @@ Fecha: 10/10/2026. Desarrolla el Documento Maestro v0.1 y registra el alcance re
 
 ## Ejemplos por rubro
 
-- **Bodega**: SKU por unidad/paquete, recepción, venta y cobro manual. Lotes/vencimientos no están implementados: v0.2.1 no proporciona trazabilidad sanitaria.
+- **Bodega**: SKU por unidad/paquete, recepción, venta y cobro manual. Lotes/vencimientos no están implementados: v0.2.2 no proporciona trazabilidad sanitaria.
 - **Ropa**: tipo con talla/color de selección, padre y SKU por variante; stock separado por combinación.
 - **Ferretería**: unidad pieza/metro y hasta tres decimales, medidas/material y locales. Conversión caja–unidad pendiente; utiliza SKU independientes.
 - **Maquinaria**: atributos de modelo/capacidad/fecha y cantidad. Serie individual, préstamo, mantenimiento y depreciación requieren extensión.
@@ -72,6 +72,17 @@ Fecha: 10/10/2026. Desarrolla el Documento Maestro v0.1 y registra el alcance re
 
 Antes de vender una instalación: aceptación en PostgreSQL, restauración comprobada, TLS/dominio y configuración de roles/impuestos. Integrar SUNAT si el cliente exige emisión fiscal. Elegir lotes/series, costeo, reservas o caja según el primer rubro. Activar/probar LLM con información autorizada y reunir historial real para pronósticos.
 
-## Ampliación 0.2.1
+## Ampliación 0.2.1 conservada
 
 Demo Repuestos permite probar datos ficticios en una base vacía y aislada. No sustituye la aceptación con PostgreSQL ni valida comercialmente un modelo ML. Se verifican saldos cronológicos, transferencias equilibradas, importes, pagos, atributos, alcance por sede y pronóstico. Fotos: JPG/PNG/WebP, 5 MB y 20 MP; conversión WebP hasta 1200 px; lectura/edición autorizada. Logo e ilustraciones genéricas se configuran en los assets de React; el editor de identidad visual desde la interfaz queda pendiente.
+
+## Ampliación 0.2.2
+
+- Nuevos/editar productos ocupan una página con ficha lateral en vivo. Ver producto consulta los datos guardados, imagen, atributos, QR y stock autorizado por almacén. El formulario no asigna existencias.
+- Los filtros combinan tipo, categoría, marca, estado, precio mínimo/máximo, orden, stock/almacén y un campo dinámico del tipo elegido. Número admite límites; selección/fecha/booleano usan valores exactos; texto permite coincidencia parcial.
+- Borrar exige `productos.eliminar` y confirmación del SKU. Solo se elimina un producto sin variantes hijas, registros de existencias ni historial de movimientos/venta/compra. Con historial se conserva y se archiva.
+- Estadísticas cubre productos, inventario, ventas, compras, contactos, organización, usuarios, auditoría y Excel. Exige lectura del módulo y `reportes.ver`; costos y administración mantienen sus restricciones.
+- Menú: Análisis (Vista general y Estadísticas primero), Administración y Operaciones. Contraer/expandir y sonido permanecen dentro del menú, fuera de su zona desplazable. Texto base 16 px y controles más grandes.
+- Alertas de éxito/error tienen color y dos tonos breves distintos tras interacción. Se pueden silenciar; la preferencia se guarda por navegador. No sustituyen el mensaje visual.
+
+IA y pronósticos no se amplían en esta entrega. Su activación y evaluación se trabajarán más adelante.

@@ -242,4 +242,7 @@ def export(tabla: str, user=Depends(require("excel.exportar")), db: Session = De
         for k, v in row.items():
             if hasattr(v, "isoformat"):
                 row[k] = v.isoformat()
-    return xlsx_response(workbook(rows, headers), tabla)
+    response = xlsx_response(workbook(rows, headers), tabla)
+    audit(db, user, "exportar", tabla, detail=f"{len(rows)} registros")
+    commit(db)
+    return response

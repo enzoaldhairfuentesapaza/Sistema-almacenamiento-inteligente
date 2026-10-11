@@ -1,14 +1,14 @@
-# Manual de usuario · v0.2.1
+# Manual de usuario · v0.2.2
 
 Sistema de Almacenamiento Inteligente. Fecha: 10/10/2026. Describe las funciones disponibles y verificadas; las integraciones pendientes no se presentan como disponibles. Incluye el entorno ficticio Demo Repuestos.
 
 ## 1. Acceder y cambiar contraseña
 
-**Objetivo:** acceder al espacio de la empresa y proteger tu cuenta. **Requisitos:** propietario creado por instalación o usuario activo creado por él. **Versión:** 0.2.1.
+**Objetivo:** acceder al espacio de la empresa y proteger tu cuenta. **Requisitos:** propietario creado por instalación o usuario activo creado por él. **Versión:** 0.2.2.
 
 1. Abre la URL de la instalación (en local, `http://localhost:8000`).
 2. Escribe correo y contraseña; pulsa **Entrar a mi espacio**.
-3. Usa el menú lateral. Pulsa **Operación**, **Análisis** o **Administración** para desplegar sus opciones. En computadora, el botón de menú contrae/expande la barra. En teléfono abre el menú y elige una pantalla; se cierra al navegar.
+3. Usa el menú lateral. Los grupos aparecen como **Análisis**, **Administración** y **Operaciones**, en ese orden. Vista general y Estadísticas encabezan Análisis. Pulsa un grupo para desplegarlo. En computadora, **Contraer menú / Expandir menú** permanece dentro de la barra, en la parte inferior, aunque desplaces las opciones. En teléfono abre el menú y elige una pantalla; se cierra al navegar.
 4. Para cambiar contraseña pulsa tu nombre/inicial en la cabecera. Escribe la contraseña actual y la nueva de al menos 12 caracteres; repítela.
 5. Tras guardar inicia sesión de nuevo. Para salir pulsa **Salir**.
 
@@ -17,7 +17,7 @@ Sistema de Almacenamiento Inteligente. Fecha: 10/10/2026. Describe las funciones
 
 ## 2. Configurar empresa, sedes y almacenes
 
-**Objetivo:** establecer identidad y ubicaciones. **Requisitos:** lectura de empresa/sedes; editar empresa y sedes para cambios. Crear una sede requiere propietario. **Versión:** 0.2.1.
+**Objetivo:** establecer identidad y ubicaciones. **Requisitos:** lectura de empresa/sedes; editar empresa y sedes para cambios. Crear una sede requiere propietario. **Versión:** 0.2.2.
 
 1. Abre **Empresa y sedes** y guarda razón social, nombre comercial, RUC opcional, moneda y zona horaria.
 2. En sedes pulsa **Nueva sede**; introduce código, nombre y dirección. Guarda.
@@ -27,23 +27,28 @@ Sistema de Almacenamiento Inteligente. Fecha: 10/10/2026. Describe las funciones
 **Resultado:** ubicaciones seleccionables en los movimientos y operaciones. **Problemas frecuentes:** código duplicado o sede inexistente/inactiva. No se traslada un almacén existente a otra sede y no se cambia moneda después de registrar ventas o compras. Los movimientos históricos se conservan al inactivar una ubicación.
 
 
-## 3. Crear tipos, productos y variantes
+## 3. Productos, ficha y filtros
 
-**Objetivo:** adaptar el catálogo al rubro. **Requisitos:** `productos.ver` y `productos.editar`; para costo, `costos.ver`. **Versión:** 0.2.1.
+**Objetivo:** adaptar el catálogo, presentar los artículos y encontrarlos con precisión. **Requisitos:** `productos.ver`; gestionar requiere `productos.editar`, costo requiere `costos.ver` y borrar requiere `productos.eliminar`. **Versión:** 0.2.2.
 
-1. En **Productos → Tipos y campos** crea un tipo como Ropa o Repuesto.
-2. Agrega clave sin espacios, etiqueta y tipo de cada campo: texto, número, fecha, booleano o selección. Para selección escribe las opciones separadas por coma. Marca los requeridos.
-3. Crea categorías en la pestaña **Categorías**; opcionalmente elige categoría padre.
-4. En **Productos** pulsa **Nuevo producto**. Completa SKU único, nombre, unidad, tipo, categoría, precio, mínimo y atributos. Precio es antes del impuesto adicional de venta.
-5. Para una variante, selecciona un producto padre; usa otro SKU y valores propios (por ejemplo talla/color). Debe compartir el tipo del padre.
-6. Opcionalmente pulsa **Agregar imagen**, elige JPG/PNG/WebP de hasta 5 MB y revisa la vista previa. Guarda. Busca por nombre, SKU o marca y usa **Editar**, **Archivar/Activar** o **QR**.
+1. Abre **Productos → Tipos y campos**. Crea un tipo y define clave, etiqueta y formato: texto, número, fecha, booleano o selección. Escribe opciones separadas por coma y marca los campos requeridos.
+2. Crea familias en **Categorías**, con categoría padre opcional. Estas dos pestañas gestionan la organización del catálogo.
+3. En la pestaña **Productos**, pulsa el botón verde **Nuevo producto**. Se abre una página propia, con formulario y **Vista previa en vivo** al lado. En móvil la ficha aparece debajo.
+4. Completa SKU único, nombre, unidad, tipo, categoría, precio y mínimo por almacén. Precio de venta es antes del impuesto adicional. El mínimo sirve para alertas; no crea stock.
+5. Opcionalmente selecciona producto padre para una variante; debe compartir su tipo y tener otro SKU. Completa atributos y descripción.
+6. Pulsa **Agregar imagen** para elegir JPG/PNG/WebP de hasta 5 MB. Nombre, precio, imagen y atributos cambian en la ficha mientras escribes. Pulsa **Crear producto**.
+7. **Ver producto** muestra la ficha guardada, QR y existencias por almacén. El ojito o el nombre del artículo abre esta pantalla. **Editar producto** abre el formulario con ficha en vivo; pulsa **Guardar cambios**. Volver al catálogo o navegar mediante enlaces pide confirmar si hay cambios sin guardar; recargar/cerrar activa el aviso del navegador cuando corresponde.
+8. En el catálogo combina búsqueda por nombre/SKU/marca, tipo, categoría, marca, estado, precio mínimo/máximo y orden. Elige **Campo dinámico** después de elegir un tipo: número permite rango, texto coincidencia parcial, fecha/selección valor exacto y booleano Sí/No. Pulsa **Aplicar filtros**; **Limpiar filtros** restablece todos.
+9. Con permiso de inventario puedes filtrar disponible, bajo mínimo o sin stock, y limitarlo a un almacén autorizado. Seleccionar almacén sin otro criterio muestra los productos con saldo positivo allí. Bajo mínimo incluye saldos registrados iguales o inferiores al mínimo; sin stock incluye artículos sin saldo positivo, incluso aún sin movimientos.
+10. **Archivar / Activar** conserva la historia y cambia la disponibilidad para nuevas operaciones. El botón rojo de papelera abre **Borrar producto**: escribe el SKU para confirmar. Si existen variantes hijas, cualquier registro de stock (incluso saldo cero), movimientos, ventas o compras, el sistema rechaza el borrado y recomienda archivar.
+11. Abre **Estadísticas** para ver productos registrados, activos/archivados, variantes, precio promedio activo, tipos y distribución por categorías.
 
-**Resultado:** producto independiente y disponible para registrar existencias; el formulario no asigna stock. **Problemas frecuentes:** SKU duplicado, campo requerido vacío, opción desconocida o padre de otro tipo. Los tipos utilizados no cambian su definición de campos en v0.2.1. Las categorías se crean, pero su edición/baja queda pendiente. Archivar impide nuevas operaciones y conserva historial.
+**Resultado:** catálogo con fichas consistentes y búsqueda combinada. **Problemas frecuentes:** SKU duplicado, requerido vacío, padre de otro tipo o rango invertido. Tipos utilizados no cambian sus campos y la edición/baja de categorías queda pendiente. Producto e imagen se guardan en dos solicitudes: si falla la imagen, se informa que el producto quedó guardado y puede reintentarse desde Editar. En instalaciones previas, el propietario debe asignar el permiso nuevo de borrado a los roles que lo necesiten; no se alteran permisos personalizados automáticamente.
 
 
 ## 4. Entradas, salidas, ajustes y transferencias
 
-**Objetivo:** mantener existencias con historial. **Requisitos:** inventario/productos/sedes visibles y `inventario.mover`; ajuste/transferencia además `inventario.ajustar`. Acceso a las sedes involucradas. **Versión:** 0.2.1.
+**Objetivo:** mantener existencias con historial. **Requisitos:** inventario/productos/sedes visibles y `inventario.mover`; ajuste/transferencia además `inventario.ajustar`. Acceso a las sedes involucradas. **Versión:** 0.2.2.
 
 1. Abre **Inventario**; alterna **Existencias** y **Kardex**. Filtra por almacén.
 2. Pulsa **Registrar movimiento**; busca y selecciona un producto.
@@ -58,7 +63,7 @@ El ajuste modifica una diferencia, no fija el saldo final. Si hay 10 y el conteo
 
 ## 5. Clientes, proveedores y recepciones
 
-**Objetivo:** conservar contactos y registrar compras recibidas. **Requisitos:** lectura/edición de contactos; para recepción `compras.crear`, lectura de catálogo/sedes/contactos y `costos.ver`. Para consulta `compras.ver` + costos. **Versión:** 0.2.1.
+**Objetivo:** conservar contactos y registrar compras recibidas. **Requisitos:** lectura/edición de contactos; para recepción `compras.crear`, lectura de catálogo/sedes/contactos y `costos.ver`. Para consulta `compras.ver` + costos. **Versión:** 0.2.2.
 
 1. En **Contactos** elige **Clientes** o **Proveedores** y pulsa **Nuevo contacto**. Guarda nombre y datos opcionales.
 2. En **Compras** pulsa **Recibir compra**. Elige almacén y proveedor activo.
@@ -71,7 +76,7 @@ El ajuste modifica una diferencia, no fija el saldo final. Si hay 10 y el conteo
 
 ## 6. Ventas, cobros y constancias
 
-**Objetivo:** vender, controlar pendientes y dejar constancia. **Requisitos:** lectura de ventas/productos/sedes y `ventas.crear`; cobrar requiere `pagos.registrar`. **Versión:** 0.2.1.
+**Objetivo:** vender, controlar pendientes y dejar constancia. **Requisitos:** lectura de ventas/productos/sedes y `ventas.crear`; cobrar requiere `pagos.registrar`. **Versión:** 0.2.2.
 
 1. Abre **Ventas y cobros → Nueva venta**. Elige almacén y cliente opcional.
 2. Busca productos, añade cantidades, precio y descuento total de fila.
@@ -88,17 +93,17 @@ La constancia es **documento interno sin validez tributaria**. SUNAT, series fis
 
 ## 7. Anular una venta
 
-**Objetivo:** revertir una venta completa conservando su historia. **Requisitos:** `ventas.ver`, `ventas.anular` y acceso a la sede. **Versión:** 0.2.1.
+**Objetivo:** revertir una venta completa conservando su historia. **Requisitos:** `ventas.ver`, `ventas.anular` y acceso a la sede. **Versión:** 0.2.2.
 
 1. Localiza la venta y abre **Ver detalle → Anular venta**.
 2. Escribe motivo y revisa la advertencia sobre cobros existentes.
 3. Confirma. Consulta estado y Kardex.
 
-**Resultado:** venta anulada y cantidades restituidas una sola vez. Cobros históricos no se borran. **Problemas frecuentes:** falta de permiso/sede. Si ya hubo cobros, concilia el reembolso fuera de la aplicación; el sistema no devuelve dinero. No se implementan devoluciones parciales ni notas de crédito. Captura de ubicación del flujo: sección anterior.
+**Resultado:** venta anulada y cantidades restituidas una sola vez. Cobros históricos no se borran. **Problemas frecuentes:** falta de permiso/sede. Si ya hubo cobros, concilia el reembolso fuera de la aplicación; el sistema no devuelve dinero. No se implementan devoluciones parciales ni notas de crédito. 
 
 ## 8. Importar y exportar Excel/CSV
 
-**Objetivo:** cargar catálogo de forma controlada y extraer información autorizada. **Requisitos:** `excel.importar` + `productos.editar`; costos además `costos.ver`. Exportar requiere `excel.exportar` y lectura del módulo. **Versión:** 0.2.1.
+**Objetivo:** cargar catálogo de forma controlada y extraer información autorizada. **Requisitos:** `excel.importar` + `productos.editar`; costos además `costos.ver`. Exportar requiere `excel.exportar` y lectura del módulo. **Versión:** 0.2.2.
 
 1. Abre **Importar / exportar** y descarga la plantilla.
 2. Completa filas con encabezados de plantilla; SKU y nombre son obligatorios. No uses fórmulas. Conserva el SKU como texto.
@@ -111,23 +116,27 @@ La constancia es **documento interno sin validez tributaria**. SUNAT, series fis
 **Resultado:** catálogo actualizado por SKU y evento de importación/auditoría. **Problemas frecuentes:** duplicados, columnas ajenas, referencias inexistentes, JSON inválido, archivos mayores de 5 MB o más de 1000 filas. Usa encabezados exactos: el mapeo libre de columnas no está disponible. QR se descarga desde cada producto y contiene solo su SKU; no hay cámara ni plancha de etiquetas.
 
 
-## 9. Vista general, asistente y pronósticos
+## 9. Vista general y estadísticas
 
-**Objetivo:** revisar actividad y consultar datos autorizados. **Requisitos:** `reportes.ver`; valoración requiere costos; IA `ia.usar` y permisos de lectura para sus herramientas; pronóstico `pronosticos.ver` + reportes. **Versión:** 0.2.1.
+**Objetivo:** revisar actividad y consultar datos autorizados. **Requisitos:** `reportes.ver`; valoración requiere costos; IA `ia.usar` y permisos de lectura para sus herramientas; pronóstico `pronosticos.ver` + reportes. **Versión:** 0.2.2.
 
-1. En **Vista general** consulta ventas de hoy, pendiente de cobro, ranking, evolución y mínimos. Los mínimos se calculan sobre registros existentes de stock; un producto sin movimientos aún no tiene registro por almacén.
-2. En **Inteligencia → Asistente** escribe una pregunta concreta: SKU/producto y almacén cuando corresponda. Envía y revisa respuesta y fuentes.
-3. Si aparece proveedor no configurado, el responsable debe completar LLM en `.env`; no hay respuestas simuladas de inventario.
-4. En pronósticos elige horizonte (7/14/30 días) y producto opcional. Sin producto predice importe de ventas; con producto, unidades vendidas.
-5. Calcula y revisa historial, modelos comparados, MAE/WAPE y bandas de error.
+1. En **Vista general** consulta ventas de hoy, pendiente de cobro, ranking, evolución y mínimos. Los mínimos usan registros existentes; un producto sin movimientos no tiene saldo registrado por almacén.
+2. Cada sección tiene una pestaña **Estadísticas**: Productos, Inventario, Ventas, Compras, Contactos, Empresa y sedes, Usuarios y roles, Auditoría e Importar / exportar. Se muestra según los permisos.
+3. En **Análisis → Estadísticas**, **Todas las secciones** reúne indicadores de cada módulo autorizado. **Ver detalle** o las pestañas de módulo abre sus indicadores, distribución y evolución cuando existe serie de operaciones.
+4. Elige **Desde** y **Hasta**, luego **Aplicar período**. Por defecto se consultan los últimos 30 días; máximo 366 días y fechas inclusivas según la zona horaria de empresa. El catálogo, contactos, usuarios y saldos reflejan el estado actual, no una foto histórica de la fecha elegida. El período filtra operaciones de ventas, compras, movimientos, auditoría y Excel.
+5. Ventas excluye anuladas del importe/ranking y expresa importes, evitando sumar cantidades de unidades diferentes. Pendiente corresponde al saldo actual de las ventas del período. Compras incluye recepciones y proveedores. Valoración usa costo actual del catálogo y solo aparece con permiso de costos.
+6. Usuarios/auditoría se reservan al propietario. Excel resume únicamente tus importaciones/exportaciones registradas, no las de otros usuarios; las exportaciones anteriores a esta versión no aparecen como eventos nuevos.
 
-**Resultado:** análisis del alcance autorizado. **Problemas frecuentes:** historial inferior a 56 días completos, falta de ventas/modelo/permiso o fallo del proveedor. Los días sin registro se consideran cero; se excluye hoy parcial. El pronóstico comienza desde hoy y no estima demanda perdida por agotamiento. Las bandas son empíricas sin cobertura garantizada. La IA no modifica datos ni responde sobre documentos PDF mediante RAG en v0.2.1. La conexión a proveedor real debe validarse antes de uso comercial.
+**Resultado:** cifras del alcance autorizado. **Problemas frecuentes:** rango invertido, superior a 366 días o falta de lectura/costos. Estadísticas de catálogo no hereda los filtros de la lista: analiza el catálogo completo autorizado. Sin eventos del período aparece el estado vacío.
 
+### Asistente y pronósticos pendientes de la siguiente etapa
+
+Su base existente se conserva; esta entrega no amplía esos módulos. El asistente requiere proveedor/modelo configurados y herramientas autorizadas; no muestra respuestas inventadas si falta configuración. Los pronósticos requieren 56 días completos, excluyen hoy parcial, comparan modelo semanal con Ridge y muestran MAE/WAPE y bandas empíricas. Se validarán con datos y proveedor reales más adelante.
 
 
 ## 10. Usuarios, roles y auditoría
 
-**Objetivo:** delegar operaciones con alcance explícito. **Requisitos:** propietario. **Versión:** 0.2.1.
+**Objetivo:** delegar operaciones con alcance explícito. **Requisitos:** propietario. **Versión:** 0.2.2.
 
 1. En **Usuarios y roles** consulta los roles iniciales o crea uno con las acciones necesarias.
 2. Crea usuario con nombre, correo, contraseña mínima de 12 caracteres, roles y sedes.
@@ -167,16 +176,24 @@ En Inventario y Kardex busca por nombre o SKU. En Ventas busca por número (por 
 
 En móvil abre el menú desde la cabecera. Puedes cerrarlo con la ×, pulsando el fondo o eligiendo una pantalla. Las tablas permiten desplazamiento horizontal.
 
-## 12. Explorar Demo Repuestos
+## 12. Colores y sonidos de alerta
 
-**Objetivo:** aprender los flujos con una empresa ficticia. **Requisitos:** ejecutar `scripts/demo.ps1` desde la raíz y elegir una contraseña. **Versión:** 0.2.1.
+**Objetivo:** reconocer acciones y resultados con rapidez. **Versión:** 0.2.2.
+
+Verde identifica crear/guardar; azul, consultar/aplicar filtros; violeta, editar; ámbar, archivar o advertir; rojo, borrar/anular o informar errores. Los botones también tienen texto o una descripción accesible: el color no es la única señal.
+
+Las confirmaciones y errores producen dos tonos breves diferentes después de la primera interacción con la página. Dentro del menú pulsa **Silenciar sonidos / Activar sonidos**; la preferencia se conserva en ese navegador. Activarlos emite una muestra. Si el navegador/equipo no permite audio, el aviso visual sigue disponible. No hay sonidos al navegar ni alarmas periódicas.
+
+## 13. Explorar Demo Repuestos
+
+**Objetivo:** aprender los flujos con una empresa ficticia. **Requisitos:** ejecutar `scripts/demo.ps1` desde la raíz y elegir una contraseña. **Versión:** 0.2.2.
 
 1. Inicia como `propietario@demo-repuestos.example.com`. El aviso amarillo confirma que son datos ficticios.
 2. Revisa Vista general: ventas, saldo pendiente, ranking y alertas.
 3. En Productos busca un filtro o pintura; abre Editar y revisa atributos, variante e imagen opcional.
 4. En Inventario consulta almacenes e Historial/Kardex. Registra una transferencia entre ubicaciones autorizadas.
 5. Crea una venta de un producto con stock, añade un cobro parcial y verifica el saldo en su detalle.
-6. En **Asistente y pronósticos → Pronósticos**, calcula 14 días. Puedes elegir un producto o todas las ventas. El asistente LLM necesita configuración propia.
+6. Consulta la pestaña **Estadísticas** de cada sección y compárala con **Análisis → Estadísticas**. IA y pronósticos se trabajarán posteriormente.
 7. Sal y entra con `ventas@demo-repuestos.example.com` para ver solo Juliaca y los permisos de vendedor. Todos los usuarios ficticios parten de la contraseña elegida al crear la demo.
 
 **Resultado:** operaciones sobre datos de prueba sin alterar PostgreSQL habitual. **Problemas frecuentes:** puerto ocupado por el servidor anterior, contraseña olvidada o falta de sede/permiso según cuenta. Cómo reiniciar y matriz de usuarios en [demo-repuestos.md](demo-repuestos.md). Los resultados ML sobre datos inventados solo demuestran el funcionamiento del flujo.

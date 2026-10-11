@@ -64,9 +64,13 @@ Todas parten de la contraseña que elegiste en la primera ejecución. Puedes cam
 | Restricción por sede | Entrar como vendedor | Solo almacén Juliaca; compras/costos no disponibles |
 | Atributos | Editar una pintura o crear variante con un SKU nuevo | Color/presentación requeridos y tipo del padre respetado |
 | Imágenes | Subir JPG/PNG/WebP menor a 5 MB y guardar | Vista previa y miniatura propia; SVG u otro archivo rechazado |
-| Menú | Desplegar un grupo y contraer la barra; repetir en teléfono | Opciones visibles según permisos y cierre tras navegar |
+| Menú | Desplazar opciones y contraer desde el control inferior; repetir en teléfono | Control siempre visible dentro del menú, opciones por permiso y cierre al navegar |
 | Excel | Descargar plantilla, completar SKU nuevo, prevalidar y confirmar | Errores por fila o importación del lote completo |
-| Pronóstico | Calcular 14 días sobre todas las ventas | Historial suficiente y comparación de dos modelos |
+| Ficha en vivo | Crear un producto de prueba y modificar nombre/precio/atributos/imagen | Ficha lateral cambia antes de guardar; crear/editar ocupa página |
+| Filtros | Tipo Repuestos, atributo Medida (mm) y precio mínimo/máximo | Solo artículos que cumplen la combinación |
+| Borrado protegido | Borrar un artículo nuevo sin movimientos; intentar borrar DR-001 | Nuevo se elimina; artículo con historial se conserva y puede archivarse |
+| Estadísticas | Abrir cada pestaña local y Estadísticas global; cambiar período | Indicadores autorizados; compras requiere costos y Excel solo eventos propios |
+| Sonidos | Silenciar, guardar un producto y recargar | Aviso visual sin tono; preferencia conservada |
 
 Antes de repetir una operación que cambia datos, consulta su estado: las pruebas anteriores pueden haber modificado las cantidades iniciales.
 
