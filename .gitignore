@@ -1,14 +1,23 @@
-# React
+# Dependencias y compilación
 node_modules/
 dist/
-
-# Python
 .venv/
 __pycache__/
 *.py[cod]
-
-# Configuración privada
+.pytest_cache/
+.ruff_cache/
+# Configuración y datos privados
 .env
 .env.*
 !.env.example
 !.env.*.example
+*.db
+*.dump
+backups/
+# Archivos temporales
+*.tsbuildinfo
+
+# Local demo data and catalog images
+.demo*/
+backend/var/
+*.sqlite3

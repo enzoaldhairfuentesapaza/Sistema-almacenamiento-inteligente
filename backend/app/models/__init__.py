@@ -1,3 +1,41 @@
 from app.models.organizacion import Almacen, Empresa, Sede
+from app.models.sistema import (
+    Audit,
+    AuthSession,
+    Category,
+    Contact,
+    ImportJob,
+    Movement,
+    Payment,
+    Product,
+    ProductType,
+    Purchase,
+    PurchaseLine,
+    Role,
+    Sale,
+    SaleLine,
+    Stock,
+    User,
+)
 
-__all__ = ["Empresa", "Sede", "Almacen"]
+__all__ = [
+    "Empresa",
+    "Sede",
+    "Almacen",
+    "Role",
+    "User",
+    "AuthSession",
+    "Audit",
+    "ProductType",
+    "Category",
+    "Product",
+    "Stock",
+    "Movement",
+    "Contact",
+    "Sale",
+    "SaleLine",
+    "Payment",
+    "Purchase",
+    "PurchaseLine",
+    "ImportJob",
+]

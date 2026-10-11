@@ -10,9 +10,7 @@ class EmpresaEntrada(BaseModel):
     nombre_comercial: str = Field(min_length=1, max_length=200)
     ruc: str | None = Field(default=None, pattern=r"^[0-9]{11}$")
     moneda: str = Field(default="PEN", pattern=r"^[A-Z]{3}$")
-    zona_horaria: str = Field(
-        default="America/Lima", min_length=1, max_length=100
-    )
+    zona_horaria: str = Field(default="America/Lima", min_length=1, max_length=100)
 
     @field_validator("zona_horaria")
     @classmethod
